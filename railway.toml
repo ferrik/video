@@ -1,0 +1,29 @@
+# Railway Deployment Configuration
+# https://docs.railway.app/deploy/config-as-code
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+startCommand = "python run.py --daemon"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
+
+# Health check (Railway will ping this)
+healthcheckPath = "/"
+healthcheckTimeout = 10
+
+# Resource allocation
+# Free tier: 512MB RAM, 1 vCPU (shared)
+# Pro tier: Adjustable
+
+[env]
+# These will be set via Railway dashboard
+# ANTHROPIC_API_KEY = (set in Railway dashboard)
+# ANTIGRAVITY_MODE = "daemon"
+# ANTIGRAVITY_BATCH_SIZE = "3"
+# ANTIGRAVITY_INTERVAL_HOURS = "6"
+
+# Railway-specific
+RAILWAY_ENVIRONMENT = "production"
