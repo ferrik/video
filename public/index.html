@@ -10419,6 +10419,52 @@ AU timezone AEST = UTC+10. Peak times for young adults (22-35) = 7-8am (commute)
     const CHANNEL_COLORS = ['#f59e0b', '#10b981', '#3b82f6', '#ef4444', '#8b5cf6', '#f97316', '#06b6d4', '#84cc16'];
 
     /* ── PORTFOLIO MANAGER ── */
+    const PF = (() => {
+      const KEY = 'cos8_portfolio_channels';
+
+      function read() {
+        try {
+          const raw = localStorage.getItem(KEY);
+          const parsed = raw ? JSON.parse(raw) : [];
+          return Array.isArray(parsed) ? parsed : [];
+        } catch {
+          return [];
+        }
+      }
+
+      function write(channels) {
+        localStorage.setItem(KEY, JSON.stringify(channels));
+      }
+
+      function withId(channel) {
+        return {
+          id: channel.id || `ch_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+          ...channel
+        };
+      }
+
+      return {
+        channels() {
+          return read();
+        },
+        add(channel) {
+          const channels = read();
+          channels.push(withId(channel));
+          write(channels);
+        },
+        update(id, patch) {
+          const channels = read().map(channel =>
+            channel.id === id ? { ...channel, ...patch } : channel
+          );
+          write(channels);
+        },
+        remove(id) {
+          const channels = read().filter(channel => channel.id !== id);
+          write(channels);
+        }
+      };
+    })();
+
     function renderPortfolio() {
       const channels = PF.channels();
       const empty = document.getElementById('portfolio-empty');
