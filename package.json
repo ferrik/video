@@ -5,12 +5,16 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
+    "check": "node --check index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
     "creator-os",
     "express",
     "anthropic",
+    "ffmpeg",
+    "elevenlabs",
+    "pexels",
     "supabase",
     "vercel"
   ],

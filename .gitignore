@@ -13,5 +13,8 @@ pnpm-debug.log*
 .vscode/
 coverage/
 dist/
+runtime/
+*.mp3
+*.mp4
 *.zip
 *.tgz
