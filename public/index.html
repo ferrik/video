@@ -12046,13 +12046,13 @@ Critical: The ${archId} archetype must be DEEPLY embedded — not just different
 
     /* UNIFIED go() PATCH */
     function go(id, el) {
-      document.querySelectorAll('.pane').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.pane').forEach(p => p.classList.remove('on'));
       const tgt = document.getElementById('p-' + id);
-      if(tgt) tgt.classList.add('active');
-      
-      if(el && el.classList) {
-        document.querySelectorAll('.ni').forEach(n => n.classList.remove('active'));
-        el.classList.add('active');
+      if (tgt) tgt.classList.add('on');
+
+      if (el && el.classList) {
+        document.querySelectorAll('.ni').forEach(n => n.classList.remove('on'));
+        el.classList.add('on');
       }
     }
 window.go = go;
