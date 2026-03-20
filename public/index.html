@@ -3999,10 +3999,19 @@
     }
 
     async function checkSession() {
-      if (!sb) return;
-      const { data: { session } } = await sb.auth.getSession();
       const loginScreen = document.getElementById('login-screen');
       const appShell = document.getElementById('app-shell');
+
+      // If Supabase is not configured yet, keep the product usable instead of
+      // showing a blank screen behind the auth gate.
+      if (!sb) {
+        if (loginScreen) loginScreen.style.display = 'none';
+        if (appShell) appShell.style.display = 'flex';
+        console.log('Supabase not configured, showing app shell.');
+        return;
+      }
+
+      const { data: { session } } = await sb.auth.getSession();
       
       if (session) {
         if (loginScreen) loginScreen.style.display = 'none';
