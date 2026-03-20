@@ -5554,6 +5554,34 @@
             </div>
           </div>
 
+          <div class="card card-b" style="margin-bottom:14px">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:10px">
+              <div>
+                <div class="sl" style="margin-bottom:4px;border-color:var(--blue-bd)">Full Video Automation</div>
+                <div style="font-family:var(--m);font-size:9px;color:var(--t3);line-height:1.9">
+                  Server pipeline: script -> voice -> clips -> FFmpeg -> publish plan -> analytics plan.
+                </div>
+              </div>
+              <div class="row">
+                <button class="btn bg bsm" id="vf-full-btn" onclick="runFullVideoAutomation()">Generate Full Video</button>
+                <button class="btn bx bsm" onclick="refreshAutomationStatus()">Refresh Status</button>
+              </div>
+            </div>
+            <div class="g2" style="gap:8px;margin-bottom:10px">
+              <div class="field"><label class="fl">Automation Platforms</label>
+                <input id="vf-platforms" placeholder="TikTok,YouTube Shorts,Instagram" value="TikTok,YouTube Shorts,Instagram" />
+              </div>
+              <div class="field"><label class="fl">Server Render Mode</label>
+                <select id="vf-render-mode">
+                  <option value="live" selected>Live render / job</option>
+                  <option value="dry">Dry run / command preview</option>
+                </select>
+              </div>
+            </div>
+            <div id="vf-auto-services" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px"></div>
+            <div id="vf-auto-job" style="font-family:var(--m);font-size:9px;color:var(--t3)">No server-side job yet. Run Generate Full Video to start.</div>
+          </div>
+
           <!-- PIPELINE STEPS -->
           <div class="vf-pipeline" id="vf-pipeline">
             <div class="vf-step" id="vfs-1">
@@ -7343,6 +7371,7 @@
       if (id === 'evolution') updateEvoChecks();
       if (id === 'hooklab') renderHookLab();
       if (id === 'cloud') { loadSbConfig(); updateCloudStats(); }
+      if (id === 'videofactory') { refreshAutomationStatus(); if (VF_AUTO.currentJobId) refreshAutomationJob(VF_AUTO.currentJobId, true); }
       if (id === 'portfolio') { if (typeof renderPortfolio === 'function') renderPortfolio(); }
       if (id === 'winnerscaling') { if (typeof renderPowerLaw === 'function') renderPowerLaw(); }
       if (id === 'archetype') { if (typeof selectArchetype === 'function') { selectArchetype(window._selectedArchetype || 'shock'); renderContentMix(); } }
@@ -8762,6 +8791,179 @@ Strategies: persona=different viewer types, city=different cities, angle=differe
       if (VF_CFG.pxKey) { const el = document.getElementById('vf-px-key'); if (el) el.value = VF_CFG.pxKey; }
     }
 
+    let VF_AUTO = { services: null, currentJobId: '', pollTimer: null };
+
+    function vfServiceChip(name, ok) {
+      const bg = ok ? 'var(--green-bg)' : 'var(--amber-bg)';
+      const bd = ok ? 'var(--green-bd)' : 'var(--amber-bd)';
+      const col = ok ? 'var(--green)' : 'var(--amber)';
+      return `<span style="display:inline-flex;align-items:center;gap:5px;padding:4px 8px;border-radius:5px;background:${bg};border:1px solid ${bd};color:${col};font-family:var(--m);font-size:8px;text-transform:uppercase;letter-spacing:.06em">${ok ? 'OK' : 'TODO'} ${name}</span>`;
+    }
+
+    function renderAutomationStatus(data) {
+      const el = document.getElementById('vf-auto-services');
+      if (!el) return;
+      const svc = data?.services || {};
+      el.innerHTML = [
+        vfServiceChip('Anthropic', svc.anthropic),
+        vfServiceChip('ElevenLabs', svc.elevenlabs),
+        vfServiceChip('Pexels', svc.pexels),
+        vfServiceChip('FFmpeg', svc.ffmpeg),
+        vfServiceChip('Buffer', svc.buffer),
+        vfServiceChip('YouTube', svc.youtube),
+        vfServiceChip('TikTok', svc.tiktok)
+      ].join('');
+    }
+
+    function vfStageState(result, okStatuses) {
+      if (!result) return { label: 'pending', color: 'var(--t4)' };
+      const status = result.status || 'pending';
+      if (okStatuses.includes(status)) return { label: status, color: 'var(--green)' };
+      if (status === 'not_configured' || status === 'manual_mode' || status === 'ready_for_integration' || status === 'ready_for_collection' || status === 'planned' || status === 'partial') {
+        return { label: status, color: 'var(--amber)' };
+      }
+      if (status === 'blocked' || status === 'missing' || status === 'error') return { label: status, color: 'var(--red)' };
+      return { label: status, color: 'var(--t2)' };
+    }
+
+    function vfSetPipelineFromJob(job) {
+      vfResetSteps();
+      if (job?.scriptPlan) vfStep(1, 'done');
+      if (job?.voiceResult) vfStep(2, 'done');
+      if (job?.clipResult) vfStep(3, 'done');
+      if (job?.renderResult) vfStep(4, 'done');
+      if (job?.publishPlan) vfStep(5, 'done');
+    }
+
+    function renderFullVideoJob(job) {
+      const el = document.getElementById('vf-auto-job');
+      if (!el) return;
+
+      if (!job) {
+        el.innerHTML = 'No server-side job yet. Run Generate Full Video to start.';
+        return;
+      }
+
+      vfSetPipelineFromJob(job);
+
+      const voiceState = vfStageState(job.voiceResult, ['completed']);
+      const clipState = vfStageState(job.clipResult, ['completed']);
+      const renderState = vfStageState(job.renderResult, ['completed']);
+      const publishState = vfStageState(job.publishPlan, ['completed']);
+      const analyticsState = vfStageState(job.analyticsPlan, ['completed']);
+      const created = job.createdAt ? new Date(job.createdAt).toLocaleString('uk-UA') : '—';
+      const scenes = job.scriptPlan?.scenes || [];
+
+      el.innerHTML = `
+        <div style="background:var(--bg);border:1px solid var(--b1);border-radius:8px;padding:12px">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:10px">
+            <div>
+              <div style="font-size:13px;font-weight:800;margin-bottom:3px">${job.scriptPlan?.title || job.input?.topic || 'Full video job'}</div>
+              <div style="font-family:var(--m);font-size:8px;color:var(--t4)">Job ${job.id || '—'} • ${created}</div>
+            </div>
+            <div style="font-family:var(--m);font-size:9px;color:${job.status === 'completed' ? 'var(--green)' : 'var(--amber)'}">${job.status || 'pending'}</div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:10px">
+            <div style="background:var(--s1);border:1px solid var(--b1);border-radius:6px;padding:8px"><div style="font-family:var(--m);font-size:8px;color:${voiceState.color}">${voiceState.label}</div><div style="font-size:11px;font-weight:700">Voice</div></div>
+            <div style="background:var(--s1);border:1px solid var(--b1);border-radius:6px;padding:8px"><div style="font-family:var(--m);font-size:8px;color:${clipState.color}">${clipState.label}</div><div style="font-size:11px;font-weight:700">Clips</div></div>
+            <div style="background:var(--s1);border:1px solid var(--b1);border-radius:6px;padding:8px"><div style="font-family:var(--m);font-size:8px;color:${renderState.color}">${renderState.label}</div><div style="font-size:11px;font-weight:700">Render</div></div>
+            <div style="background:var(--s1);border:1px solid var(--b1);border-radius:6px;padding:8px"><div style="font-family:var(--m);font-size:8px;color:${publishState.color}">${publishState.label}</div><div style="font-size:11px;font-weight:700">Publish</div></div>
+            <div style="background:var(--s1);border:1px solid var(--b1);border-radius:6px;padding:8px"><div style="font-family:var(--m);font-size:8px;color:${analyticsState.color}">${analyticsState.label}</div><div style="font-size:11px;font-weight:700">Analytics</div></div>
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+            ${job.renderResult?.publicUrl ? `<a href="${job.renderResult.publicUrl}" target="_blank" class="btn bg bsm" style="text-decoration:none">Open MP4</a>` : ''}
+            ${job.voiceResult?.publicUrl ? `<a href="${job.voiceResult.publicUrl}" target="_blank" class="btn bb bsm" style="text-decoration:none">Open MP3</a>` : ''}
+            <button class="btn bx bsm" onclick="refreshAutomationJob('${job.id}')">Refresh Job</button>
+          </div>
+          <div style="font-family:var(--m);font-size:8px;color:var(--t4);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">Scenes</div>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            ${scenes.map(scene => `<div style="background:var(--s1);border:1px solid var(--b1);border-radius:6px;padding:8px"><div style="font-family:var(--m);font-size:8px;color:var(--amber);margin-bottom:3px">Scene ${scene.scene_id}</div><div style="font-size:11px;margin-bottom:3px">${scene.voiceover || '—'}</div><div style="font-family:var(--m);font-size:8px;color:var(--t3)">query: ${scene.search_query || '—'} • ${scene.duration_sec || 0}s</div></div>`).join('')}
+          </div>
+          ${job.renderResult?.commandPreview ? `<div style="margin-top:10px"><div style="font-family:var(--m);font-size:8px;color:var(--t4);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">FFmpeg</div><div style="background:var(--s1);border:1px solid var(--b1);border-radius:6px;padding:8px;font-family:var(--m);font-size:8px;line-height:1.8;word-break:break-all">${job.renderResult.commandPreview}</div></div>` : ''}
+        </div>`;
+    }
+
+    async function refreshAutomationStatus() {
+      try {
+        const resp = await fetch('/api/automation/status');
+        if (!resp.ok) throw new Error('status ' + resp.status);
+        const data = await resp.json();
+        VF_AUTO.services = data.services || {};
+        renderAutomationStatus(data);
+      } catch (e) {
+        const el = document.getElementById('vf-auto-services');
+        if (el) el.innerHTML = `<span style="font-family:var(--m);font-size:8px;color:var(--red)">Status unavailable: ${e.message}</span>`;
+      }
+    }
+
+    function stopAutomationPolling() {
+      if (VF_AUTO.pollTimer) {
+        clearInterval(VF_AUTO.pollTimer);
+        VF_AUTO.pollTimer = null;
+      }
+    }
+
+    async function refreshAutomationJob(jobId, silent = false) {
+      if (!jobId) return;
+      try {
+        const resp = await fetch('/api/automation/jobs/' + jobId);
+        if (!resp.ok) throw new Error('job ' + resp.status);
+        const job = await resp.json();
+        VF_AUTO.currentJobId = job.id;
+        localStorage.setItem('cos10_vf_last_job', job.id);
+        renderFullVideoJob(job);
+        if (!silent) notify(`Job ${job.id.slice(-6)} оновлено`, 'g');
+      } catch (e) {
+        if (!silent) notify('Не вдалося оновити job: ' + e.message, 'r');
+      }
+    }
+
+    function startAutomationPolling(jobId) {
+      stopAutomationPolling();
+      if (!jobId) return;
+      VF_AUTO.pollTimer = setInterval(() => refreshAutomationJob(jobId, true), 12000);
+    }
+
+    async function runFullVideoAutomation() {
+      const topic = document.getElementById('vf-topic')?.value.trim();
+      if (!topic) { notify('Введи тему відео', 'r'); return; }
+
+      const payload = {
+        topic,
+        product: document.getElementById('vf-product')?.value || 'Affiliate product',
+        platform: document.getElementById('vf-platforms')?.value || 'TikTok,YouTube Shorts,Instagram',
+        durationSec: +document.getElementById('vf-duration')?.value || 30,
+        dryRun: (document.getElementById('vf-render-mode')?.value || 'live') === 'dry'
+      };
+
+      const btn = document.getElementById('vf-full-btn');
+      if (btn) btn.disabled = true;
+      ld('videofactory', true, 'Running full video automation on server...');
+
+      try {
+        const resp = await fetch('/api/automation/full-video', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data?.details || data?.error || ('status ' + resp.status));
+
+        VF_AUTO.currentJobId = data.id;
+        localStorage.setItem('cos10_vf_last_job', data.id);
+        renderFullVideoJob(data);
+        startAutomationPolling(data.id);
+        notify(`Full video job ${data.id.slice(-6)} created`, 'g');
+      } catch (e) {
+        notify('Full video automation failed: ' + e.message, 'r');
+      } finally {
+        ld('videofactory', false);
+        if (btn) btn.disabled = false;
+        refreshAutomationStatus();
+      }
+    }
+
     /* Pipeline step UI */
     function vfStep(n, state) {
       const el = document.getElementById('vfs-' + n);
@@ -9117,7 +9319,16 @@ Rules:
     }
 
     /* Hook into DOMContentLoaded for VF config restore */
-    document.addEventListener('DOMContentLoaded', () => { loadVfConfig(); });
+    document.addEventListener('DOMContentLoaded', () => {
+      loadVfConfig();
+      refreshAutomationStatus();
+      const lastJobId = localStorage.getItem('cos10_vf_last_job') || '';
+      if (lastJobId) {
+        VF_AUTO.currentJobId = lastJobId;
+        refreshAutomationJob(lastJobId, true);
+        startAutomationPolling(lastJobId);
+      }
+    });
 
 
     /* ═══════════════════════════════════════════════════════════
