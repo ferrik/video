@@ -49,8 +49,8 @@
       --b3: #383842;
       --t1: #f4f4f6;
       --t2: #a0a0b0;
-      --t3: #606070;
-      --t4: #38383f;
+      --t3: #b2b2c6;
+      --t4: #8c8ca3;
       --amber: #f59e0b;
       --amber2: #d97706;
       --amber-bg: #f59e0b0e;
@@ -329,6 +329,28 @@
     .tb-bc span {
       color: var(--t4);
       font-weight: 400
+    }
+
+    .tb-mobile-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid var(--blue-bd);
+      background: var(--blue-bg);
+      color: var(--blue);
+      border-radius: 10px;
+      padding: 7px 10px;
+      font-family: var(--m);
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      cursor: pointer;
+      white-space: nowrap
+    }
+
+    .tb-mobile-btn:hover {
+      filter: brightness(1.08)
     }
 
     .tb-spacer {
@@ -1323,6 +1345,233 @@
       font-size: 22px;
       font-weight: 700;
       line-height: 1
+    }
+
+    .vf-mobile-screen {
+      display: none;
+      margin-bottom: 14px
+    }
+
+    .vf-mobile-card {
+      background: linear-gradient(180deg, rgba(30, 41, 59, .92), rgba(10, 14, 24, .98));
+      border: 1px solid var(--b1);
+      border-radius: 16px;
+      padding: 14px
+    }
+
+    .vf-mobile-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin: 12px 0
+    }
+
+    .vf-mobile-step {
+      display: grid;
+      grid-template-columns: 32px 1fr;
+      gap: 10px;
+      align-items: start;
+      padding: 10px;
+      border-radius: 12px;
+      border: 1px solid var(--b1);
+      background: rgba(255, 255, 255, .02)
+    }
+
+    .vf-mobile-step.is-active {
+      border-color: var(--blue-bd);
+      background: rgba(59, 130, 246, .12)
+    }
+
+    .vf-mobile-step.is-done {
+      border-color: var(--green-bd);
+      background: rgba(16, 185, 129, .10)
+    }
+
+    .vf-mobile-step.is-error {
+      border-color: var(--red-bd);
+      background: rgba(239, 68, 68, .10)
+    }
+
+    .vf-mobile-step-badge {
+      width: 32px;
+      height: 32px;
+      border-radius: 999px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--m);
+      font-size: 11px;
+      font-weight: 700;
+      background: var(--s1);
+      border: 1px solid var(--b1);
+      color: var(--t2)
+    }
+
+    .vf-mobile-step.is-active .vf-mobile-step-badge {
+      border-color: var(--blue-bd);
+      color: var(--blue)
+    }
+
+    .vf-mobile-step.is-done .vf-mobile-step-badge {
+      border-color: var(--green-bd);
+      color: var(--green)
+    }
+
+    .vf-mobile-step.is-error .vf-mobile-step-badge {
+      border-color: var(--red-bd);
+      color: var(--red)
+    }
+
+    .vf-job-status-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 6px;
+      margin-bottom: 10px
+    }
+
+    .vf-job-two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 10px
+    }
+
+    @media (max-width: 900px) {
+
+      html,
+      body {
+        overflow: auto;
+      }
+
+      .shell {
+        flex-direction: column;
+        height: auto;
+        min-height: 100vh;
+        overflow: visible;
+      }
+
+      .nav {
+        width: 100%;
+        border-right: 0;
+        border-bottom: 1px solid var(--b1);
+      }
+
+      .nav-logo,
+      .nav-sec,
+      .nav-kpi,
+      .goal-box {
+        display: none;
+      }
+
+      .body,
+      .panel {
+        overflow: visible;
+      }
+
+      .topbar {
+        height: auto;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        gap: 8px;
+        padding: 10px 12px;
+      }
+
+      .tb-spacer,
+      .tb-div {
+        display: none;
+      }
+
+      .pane {
+        padding: 14px;
+        max-width: 100%;
+      }
+
+      .ph-row,
+      .row {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .g2,
+      .result-fields {
+        grid-template-columns: 1fr !important;
+      }
+
+      .plat-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .vf-pipeline {
+        grid-template-columns: 1fr !important;
+        gap: 8px;
+      }
+
+      .vf-arrow {
+        display: none;
+      }
+
+      .plat-head,
+      .plat-foot {
+        align-items: flex-start;
+      }
+
+      .plat-copy-all,
+      .btn {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+
+    @media (max-width: 640px) {
+
+      .pane {
+        padding: 10px;
+      }
+
+      .card,
+      .plat-card,
+      .pkg-hero {
+        padding: 12px;
+      }
+
+      .ph-title {
+        font-size: 18px;
+      }
+
+      .ph-sub,
+      .tb-bc,
+      .plat-limit,
+      .plat-time,
+      .plat-fl {
+        font-size: 10px;
+      }
+
+      input,
+      textarea,
+      select,
+      .plat-text {
+        font-size: 16px;
+      }
+
+      .vf-mobile-screen {
+        display: block;
+      }
+
+      .vf-legacy-shell,
+      .truth-box,
+      .vf-pipeline,
+      #vf-auto-job {
+        display: none;
+      }
+
+      .vf-mobile-actions {
+        flex-direction: column;
+      }
+
+      .vf-job-status-grid,
+      .vf-job-two-col {
+        grid-template-columns: 1fr;
+      }
     }
 
     .pkg-stat-l {
@@ -4256,6 +4505,7 @@
     <!-- ═══════════ BODY ═══════════ -->
     <div class="body">
       <div class="topbar">
+        <button class="tb-mobile-btn" onclick="openVideoFactoryMobile()">📱 Mobile</button>
         <div class="tb-bc" id="bc"><span>Контент ОС v3 /</span> Радар Сигналів</div>
         <div class="tb-spacer"></div>
         <div class="fix-indicator">
@@ -4979,11 +5229,11 @@
                 <div class="field"><label class="fl">Місто / Регіон</label>
                   <input id="pub-city" placeholder="Сідней" />
                 </div>
-                <div class="field"><label class="fl">Мова описів</label>
+                <div class="field"><label class="fl">Мовний режим</label>
                   <select id="pub-lang">
-                    <option value="uk">🇺🇦 Українська (тести)</option>
-                    <option value="en" selected>🇬🇧 English (публікація)</option>
-                    <option value="bilingual">🔀 Двомовна</option>
+                    <option value="market_ua" selected>🌍 Локальна мова/діалект + українська</option>
+                    <option value="market_only">🌍 Лише локальна мова/діалект</option>
+                    <option value="ua_only">🇺🇦 Лише українська</option>
                   </select>
                 </div>
               </div>
@@ -5423,6 +5673,24 @@
             </div>
           </div>
 
+          <div class="vf-mobile-screen">
+            <div class="vf-mobile-card">
+              <div class="sl" style="margin-bottom:6px;border-color:var(--blue-bd)">One Tap Video Flow</div>
+              <div style="font-size:13px;font-weight:800;margin-bottom:4px">Окремий покроковий екран для смартфона</div>
+              <div style="font-family:var(--m);font-size:9px;color:var(--t3);line-height:1.8;margin-bottom:10px">Тема і продукт підтягуються автоматично, далі система проходить кроки послідовно аж до готового відео.</div>
+              <div id="vf-auto-topic-card" style="background:var(--s1);border:1px solid var(--b1);border-radius:12px;padding:10px;margin-bottom:10px"></div>
+              <div id="vf-mobile-readiness" style="margin-bottom:10px"></div>
+              <div id="vf-mobile-steps" class="vf-mobile-steps"></div>
+              <div class="row vf-mobile-actions" style="gap:8px">
+                <button class="btn ba" id="vf-mobile-run-btn" onclick="runFullVideoAutomation(true)">▶ Запустити автоматично</button>
+                <button class="btn bx" onclick="refreshVideoFactoryAutofill(true)">⟳ Оновити тему</button>
+              </div>
+              <div id="vf-mobile-result" style="margin-top:12px"></div>
+            </div>
+          </div>
+
+          <div class="vf-legacy-shell">
+
           <!-- РЕАЛЬНІСТЬ -->
           <div class="truth-box">
             <div
@@ -5435,7 +5703,7 @@
                   API)<br />CapCut інструкція<br />Субтитри текст<br />Пакет публікації</div>
               </div>
               <div>
-                <div style="color:var(--amber);font-weight:700;margin-bottom:4px">⚡ Потрібен ключ API</div>
+                <div style="color:var(--amber);font-weight:700;margin-bottom:4px">⚡ Потрібен ключ у Render</div>
                 <div style="color:var(--t2);line-height:1.9">ElevenLabs → MP3 голос<br />Pexels → прямі посилання
                   кліпів<br /><br /></div>
                 <div style="color:var(--red);font-weight:700;margin-top:4px">❌ Ручна дія (5-8 хв)</div>
@@ -5446,27 +5714,29 @@
 
           <!-- API KEYS -->
           <div class="card" style="margin-bottom:14px">
-            <div class="sl">API Ключі (опціонально — без них теж працює)</div>
+            <div class="sl">API ключі Render Environment</div>
             <div class="g2" style="gap:8px">
-              <div class="field"><label class="fl">ElevenLabs API Key → озвучка <a href="https://elevenlabs.io"
-                    target="_blank" style="color:var(--blue)">elevenlabs.io</a></label>
-                <input id="vf-el-key" type="password" placeholder="sk_..." oninput="saveVfConfig()" />
+              <div style="background:var(--s1);border:1px solid var(--b1);border-radius:10px;padding:10px">
+                <div style="font-size:11px;font-weight:700;color:var(--t1);margin-bottom:4px">ElevenLabs API Key → озвучка</div>
+                <div id="vf-el-status" style="font-family:var(--m);font-size:8px;color:var(--t3)">Перевіряю Render environment…</div>
               </div>
-              <div class="field"><label class="fl">Pexels API Key → кліпи <a href="https://www.pexels.com/api"
-                    target="_blank" style="color:var(--blue)">pexels.com/api</a></label>
-                <input id="vf-px-key" type="password" placeholder="xxxxx..." oninput="saveVfConfig()" />
+              <div style="background:var(--s1);border:1px solid var(--b1);border-radius:10px;padding:10px">
+                <div style="font-size:11px;font-weight:700;color:var(--t1);margin-bottom:4px">Pexels API Key → кліпи</div>
+                <div id="vf-px-status" style="font-family:var(--m);font-size:8px;color:var(--t3)">Перевіряю Render environment…</div>
               </div>
             </div>
-            <div style="font-family:var(--m);font-size:8px;color:var(--t4)">Обидва безкоштовні. ElevenLabs: 10 000
-              символів/міс безкоштовно. Pexels: необмежено безкоштовно.</div>
+            <div style="font-family:var(--m);font-size:8px;color:var(--t3)">Ключі більше не вводяться в браузері. Video Factory автоматично бере їх із Render environment на сервері.</div>
           </div>
 
           <!-- INPUT -->
           <div class="g2" style="gap:12px;margin-bottom:14px">
             <div class="card">
               <div class="sl">Вхідні дані відео</div>
-              <div class="field"><label class="fl">Тема / Зачіпка</label>
-                <input id="vf-topic" placeholder="Орендарі Sydney — $12 трюк від тарганів що власники ненавидять" />
+              <div class="field"><label class="fl">Автообрана тема</label>
+                <div class="row" style="gap:8px">
+                  <input id="vf-topic" readonly placeholder="Тема буде підібрана автоматично" />
+                  <button class="btn bx bsm" type="button" onclick="refreshVideoFactoryAutofill(true)">Оновити</button>
+                </div>
               </div>
               <div class="g2" style="gap:8px">
                 <div class="field"><label class="fl">Продукт</label>
@@ -5579,6 +5849,7 @@
               </div>
             </div>
             <div id="vf-auto-services" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px"></div>
+            <div id="vf-auto-readiness" style="margin-bottom:10px"></div>
             <div id="vf-auto-job" style="font-family:var(--m);font-size:9px;color:var(--t3)">No server-side job yet. Run Generate Full Video to start.</div>
           </div>
 
@@ -5615,6 +5886,7 @@
             <div class="ld-t" id="ld-videofactory-t">Запускаю агентів...</div>
           </div>
           <div class="res" id="r-videofactory"></div>
+          </div>
         </div>
 
 
@@ -7092,6 +7364,8 @@
         winnerViews: 50000,
         winnerRevenue: 50,
         slangExamples: 'arvo, servo, bottle-o, maccas, brekky, heaps good',
+        localeLabel: 'Australian English',
+        dialectPrompt: 'Use natural Australian English with light local phrasing, without overdoing slang.',
         color: 'var(--amber)',
       },
       US: {
@@ -7109,6 +7383,8 @@
         winnerViews: 100000,
         winnerRevenue: 50,
         slangExamples: 'y\'all, gonna, wanna, kinda, super easy, literally',
+        localeLabel: 'American English',
+        dialectPrompt: 'Use natural American English that sounds native for short-form social media.',
         color: '#3b82f6',
       },
       UK: {
@@ -7126,6 +7402,8 @@
         winnerViews: 50000,
         winnerRevenue: 40,
         slangExamples: 'mate, brilliant, proper, innit, sorted, gutted, cheeky',
+        localeLabel: 'British English',
+        dialectPrompt: 'Use natural British English with UK wording and spelling.',
         color: 'var(--red)',
       },
       CA: {
@@ -7143,6 +7421,8 @@
         winnerViews: 50000,
         winnerRevenue: 50,
         slangExamples: 'eh, double-double, toque, loonie, toonie, hydro',
+        localeLabel: 'Canadian English',
+        dialectPrompt: 'Use natural Canadian English with Canadian wording and spelling.',
         color: 'var(--red)',
       },
     };
@@ -7342,6 +7622,7 @@
     function cp(id, t) { navigator.clipboard?.writeText(t); const b = document.getElementById(id); if (b) { b.textContent = '✓ Скопійовано'; b.classList.add('ok'); setTimeout(() => { b.textContent = 'КОПІЮВАТИ'; b.classList.remove('ok') }, 1800) } }
     function ld(id, on, msg) { const el = document.getElementById('ld-' + id); if (!el) return; el.classList.toggle('on', on); const m = document.getElementById('ld-' + id + '-t'); if (m && msg) m.textContent = msg }
     function showR(id, html) { const el = document.getElementById('r-' + id); if (!el) return; el.innerHTML = html; el.classList.add('on') }
+    function escapeHtml(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
 
     /* ── UI DECORATORS ── */
     function updateDocNavBadge(errs, warns) {
@@ -7358,7 +7639,19 @@
     /* ── NAV ── */
     const PANES = ['signal', 'factory', 'genome', 'pipeline', 'champion', 'evolution', 'matrix', 'publish', 'hooklab', 'monopoly', 'cloud', 'videofactory', 'heygen', 'saas', 'doctor', 'audience', 'gaphunter', 'amplifier', 'timing', 'portfolio', 'nichediscovery', 'launcher', 'viralpattern', 'variation', 'launch', 'audienceasset', 'humanreview', 'bizmodel', 'winnerscaling', 'archetype'];
     const CRUMBS = { signal: 'Радар Сигналів', factory: 'Фабрика Контенту', genome: 'Теггер Геному', pipeline: 'Конвеєр Даних', champion: 'Блокування Чемпіона', evolution: 'Двигун Еволюції', matrix: 'Матриця Генів', publish: 'Пакет Публікації', hooklab: 'Hook Lab', monopoly: 'Topic Monopoly', cloud: 'Cloud Sync', videofactory: 'Video Factory', heygen: 'HeyGen AI Video', saas: 'SaaS Dashboard', doctor: 'System Doctor', audience: 'Audience Intel', gaphunter: 'Gap Hunter', amplifier: 'Multi-Platform', timing: 'Timing Engine', portfolio: 'Portfolio Manager', nichediscovery: 'Ніша Discovery', launcher: 'Channel Launcher', viralpattern: 'Viral Pattern', variation: 'Variation Engine', launch: 'Запуск Каналу', audienceasset: 'Audience Asset', humanreview: 'Human Review', bizmodel: 'Бізнес Модель', winnerscaling: 'Winner Scaling', archetype: 'Archetype Engine' };
+    function setMobileViewQuery(enabled) {
+      const url = new URL(window.location.href);
+      if (enabled) url.searchParams.set('view', 'mobile-vf');
+      else url.searchParams.delete('view');
+      window.history.replaceState({}, '', url);
+    }
+    function openVideoFactoryMobile() {
+      setMobileViewQuery(true);
+      go('videofactory', document.getElementById('ni-videofactory'));
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
     window.go = function (id, el) {
+      if (id !== 'videofactory') setMobileViewQuery(false);
       PANES.forEach(p => { document.getElementById('p-' + p)?.classList.remove('on') });
       document.getElementById('p-' + id)?.classList.add('on');
       document.querySelectorAll('.ni').forEach(n => n.classList.remove('on'));
@@ -7371,7 +7664,7 @@
       if (id === 'evolution') updateEvoChecks();
       if (id === 'hooklab') renderHookLab();
       if (id === 'cloud') { loadSbConfig(); updateCloudStats(); }
-      if (id === 'videofactory') { refreshAutomationStatus(); if (VF_AUTO.currentJobId) refreshAutomationJob(VF_AUTO.currentJobId, true); }
+      if (id === 'videofactory') { refreshVideoFactoryAutofill(); refreshAutomationStatus(); if (VF_AUTO.currentJobId) refreshAutomationJob(VF_AUTO.currentJobId, true); }
       if (id === 'portfolio') { if (typeof renderPortfolio === 'function') renderPortfolio(); }
       if (id === 'winnerscaling') { if (typeof renderPowerLaw === 'function') renderPowerLaw(); }
       if (id === 'archetype') { if (typeof selectArchetype === 'function') { selectArchetype(window._selectedArchetype || 'shock'); renderContentMix(); } }
@@ -8141,16 +8434,16 @@ Schema:{"variations":[{"title":string,"hook_ua":string,"mutation":string,"predic
 
       ld('publish', true, 'Генерую пакети для ' + platforms.length + ' платформ...');
 
-      const langInstr = lang === 'uk'
-        ? 'Write ALL text content in Ukrainian language.'
-        : lang === 'bilingual'
-          ? 'Write titles in Ukrainian, descriptions and hashtags in English.'
-          : 'Write ALL text content in English.';
+      const langInstr = lang === 'ua_only'
+        ? 'Write all publish text in Ukrainian only.'
+        : lang === 'market_only'
+          ? `Write all publish text only in ${MARKET.localeLabel}. ${MARKET.dialectPrompt}`
+          : `Write every publish text twice: first in ${MARKET.localeLabel} for ${MARKET.name}, then provide a full Ukrainian version. ${MARKET.dialectPrompt}`;
 
       const r = await ai(
         `You are a social media content packager. Генерувати platform-optimized publish packages for a pest control video.
 ${langInstr}
-Schema: {"packages":[{"platform":string,"title":string,"description":string,"hashtags":string[],"best_time":string,"thumbnail_idea":string,"reach_estimate":string,"notes":string}],"affiliate_note":string}
+Schema: {"packages":[{"platform":string,"title_local":string,"description_local":string,"title_ua":string,"description_ua":string,"hashtags":string[],"best_time_local":string,"best_time_ua":string,"thumbnail_idea_local":string,"thumbnail_idea_ua":string,"reach_estimate_local":string,"reach_estimate_ua":string,"notes_local":string,"notes_ua":string}],"affiliate_note_local":string,"affiliate_note_ua":string}
 Rules per platform:
 - tiktok: max 2200 chars description, 3-5 hashtags, hook in first line, NO clickable links (say "link in bio")
 - youtube: max 5000 chars, 3-8 hashtags in description, SEO-optimized title (60 chars), full description with timestamps, affiliate link OK in description
@@ -8159,43 +8452,68 @@ Rules per platform:
 - threads: max 500 chars, 1-3 hashtags, casual tone, include short affiliate link
 - twitter: max 280 chars TOTAL including hashtags and link, 1-2 hashtags only
 - snapchat: max 250 chars, 3-5 hashtags, very casual young tone
-Ринок: ${MARKET.name}, Currency: ${MARKET.currency}, Amazon: ${MARKET.amazonDomain}`,
+- Local text MUST match the target country's language and dialect.
+- When Ukrainian duplication is requested, the Ukrainian version must preserve meaning, CTA, and local context.
+Ринок: ${MARKET.name}, Locale: ${MARKET.localeLabel}, Dialect: ${MARKET.dialectPrompt}, Currency: ${MARKET.currency}, Amazon: ${MARKET.amazonDomain}`,
         `Topic: "${topic}". Script: "${script || 'Not provided'}". Product: "${product}". City: "${city}". Affiliate URL: "${affLink}". Platforms: ${platforms.join(', ')}.`,
         {
           packages: platforms.map(p => {
-            const pc = PLATFORM_CONFIG[p];
-            const isYT = p === 'youtube';
-            const desc = isYT
-              ? `${topic}\n\n${script || 'See video for full tutorial.'}\n\n🛒 Get it here: ${affLink}\n\n⏱ Timestamps:\n0:00 - Problem\n0:10 - Solution\n0:25 - Product\n0:40 - Results\n\n#pestcontrol #${city.replace(/\s/g, '').toLowerCase()} #australia`
+            const slugCity = city.replace(/\s/g, '').toLowerCase();
+            const localTitle = `${topic.slice(0, 58)} | ${MARKET.currency}${product.split(' ')[2] || '12'} fix`;
+            const localDesc = p === 'youtube'
+              ? `${topic}\n\n${script || 'See video for the full tutorial.'}\n\n🛒 Get it here: ${affLink}\n\n⏱ Timestamps:\n0:00 Problem\n0:10 Solution\n0:25 Product\n0:40 Result\n\n#pestcontrol #${slugCity} #${MARKET.code.toLowerCase()}`
               : p === 'pinterest'
-                ? `${topic}. Best pest control solution for ${city} residents. Shop: ${affLink} #pestcontrol #${city.replace(/\s/g, '').toLowerCase()}`
+                ? `${topic}. Best pest-control option for ${city}. Shop here: ${affLink} #pestcontrol #${slugCity}`
                 : p === 'twitter'
                   ? `${topic.slice(0, 80)}... Link: ${affLink} #pestcontrol`
-                  : `${topic}\n\nShop here 👉 link in bio\n\n#pestcontrol #${city.replace(/\s/g, '').toLowerCase()}`;
+                  : `${topic}\n\nLink in bio for the product.\n\n#pestcontrol #${slugCity}`;
+
             return {
               platform: p,
-              title: `${topic.slice(0, 58)} | ${MARKET.currency}${product.split(' ')[2] || '12'} Fix`,
-              description: desc,
-              hashtags: p === 'youtube' ? ['pestcontrol', city.replace(/\s/g, '').toLowerCase(), 'australia', 'pests', 'homeowners', 'diy', 'shorts'] :
-                p === 'instagram' ? ['pestcontrol', 'pests', 'australia', city.replace(/\s/g, '').toLowerCase(), 'renterstips', 'homeowner', 'diypestcontrol', 'pestfree', 'australiahome', 'rentlife'] :
-                  ['pestcontrol', 'australia', city.replace(/\s/g, '').toLowerCase()],
-              best_time: p === 'tiktok' ? 'Вт/Чт/Пт 19:00–21:00 (місцевий час)' :
-                p === 'youtube' ? 'Пн/Ср/Пт 14:00–16:00 (місцевий час)' :
-                  p === 'instagram' ? 'Ср/Пт/Сб 11:00–13:00 (місцевий час)' :
-                    p === 'pinterest' ? 'Пт/Сб/Нд 20:00–23:00 (місцевий час)' :
-                      'Пн–Пт 18:00–20:00 (місцевий час)',
-              thumbnail_idea: `Великий план ${topic.split(' ')[0]} + текст "${topic.slice(0, 25)}..." + стрілка на продукт`,
-              reach_estimate: p === 'tiktok' ? '500–15 000 органічно' : p === 'youtube' ? '200–5 000 органічно' : p === 'instagram' ? '300–8 000 органічно' : '100–3 000 органічно',
-              notes: p === 'youtube' ? 'Додай картки з посиланням на 0:35' : p === 'pinterest' ? 'Вертикальний формат 9:16 обов\'язково' : ''
+              title_local: localTitle,
+              description_local: localDesc,
+              title_ua: `${topic.slice(0, 58)} | рішення за ${MARKET.currency}${product.split(' ')[2] || '12'}`,
+              description_ua: `${topic}\n\n${script || 'Дивись відео для повного пояснення.'}\n\n🛒 Продукт: ${affLink}`,
+              hashtags: p === 'youtube'
+                ? ['pestcontrol', slugCity, MARKET.code.toLowerCase(), 'pests', 'homeowners', 'diy', 'shorts']
+                : p === 'instagram'
+                  ? ['pestcontrol', 'pests', MARKET.code.toLowerCase(), slugCity, 'renterstips', 'homeowner', 'diypestcontrol', 'pestfree', 'home', 'rentlife']
+                  : ['pestcontrol', MARKET.code.toLowerCase(), slugCity],
+              best_time_local: p === 'tiktok'
+                ? 'Tue/Thu/Fri 19:00–21:00 local time'
+                : p === 'youtube'
+                  ? 'Mon/Wed/Fri 14:00–16:00 local time'
+                  : p === 'instagram'
+                    ? 'Wed/Fri/Sat 11:00–13:00 local time'
+                    : p === 'pinterest'
+                      ? 'Fri/Sat/Sun 20:00–23:00 local time'
+                      : 'Mon–Fri 18:00–20:00 local time',
+              best_time_ua: p === 'tiktok'
+                ? 'Вт/Чт/Пт 19:00–21:00 (місцевий час)'
+                : p === 'youtube'
+                  ? 'Пн/Ср/Пт 14:00–16:00 (місцевий час)'
+                  : p === 'instagram'
+                    ? 'Ср/Пт/Сб 11:00–13:00 (місцевий час)'
+                    : p === 'pinterest'
+                      ? 'Пт/Сб/Нд 20:00–23:00 (місцевий час)'
+                      : 'Пн–Пт 18:00–20:00 (місцевий час)',
+              thumbnail_idea_local: `Close-up on ${topic.split(' ')[0]} + bold text "${topic.slice(0, 25)}..." + arrow to product`,
+              thumbnail_idea_ua: `Великий план ${topic.split(' ')[0]} + текст "${topic.slice(0, 25)}..." + стрілка на продукт`,
+              reach_estimate_local: p === 'tiktok' ? '500–15,000 organic' : p === 'youtube' ? '200–5,000 organic' : p === 'instagram' ? '300–8,000 organic' : '100–3,000 organic',
+              reach_estimate_ua: p === 'tiktok' ? '500–15 000 органічно' : p === 'youtube' ? '200–5 000 органічно' : p === 'instagram' ? '300–8 000 органічно' : '100–3 000 органічно',
+              notes_local: p === 'youtube' ? 'Add end-screen cards around 0:35.' : p === 'pinterest' ? 'Vertical 9:16 format is required.' : '',
+              notes_ua: p === 'youtube' ? 'Додай картки з посиланням на 0:35.' : p === 'pinterest' ? 'Вертикальний формат 9:16 обов\'язковий.' : ''
             };
           }),
-          affiliate_note: `Посилання: ${affLink} · Тег: ${MARKET.tag} · Домен: ${MARKET.amazonDomain}`
+          affiliate_note_local: `Link: ${affLink} · Tag: ${MARKET.tag} · Domain: ${MARKET.amazonDomain}`,
+          affiliate_note_ua: `Посилання: ${affLink} · Тег: ${MARKET.tag} · Домен: ${MARKET.amazonDomain}`
         }
       );
 
       ld('publish', false);
 
       const pkgs = r.packages || [];
+      const showUkrainian = lang !== 'market_only';
       if (!pkgs.length) { notify('Помилка генерації', 'r'); return; }
 
       // Stats header
@@ -8207,7 +8525,7 @@ Rules per platform:
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:10px;flex-wrap:wrap">
       <div>
         <div style="font-size:15px;font-weight:800;margin-bottom:3px">${topic}</div>
-        <div style="font-family:var(--m);font-size:9px;color:var(--t3)">${MARKET.flag} ${MARKET.name} · ${product} · ${affLink}</div>
+        <div style="font-family:var(--m);font-size:9px;color:var(--t2)">${MARKET.flag} ${MARKET.name} · ${MARKET.localeLabel} · ${product} · ${affLink}</div>
       </div>
       <button class="btn bg" onclick="copyAllPlatforms()" style="flex-shrink:0">📋 Копіювати Все</button>
     </div>
@@ -8219,73 +8537,73 @@ Rules per platform:
     </div>
   </div>
   <div style="font-family:var(--m);font-size:9px;color:var(--amber);padding:7px 10px;background:var(--amber-bg);border:1px solid var(--amber-bd);border-radius:6px;margin-bottom:14px">
-    🔗 ${r.affiliate_note}
+    🔗 ${r.affiliate_note_local || r.affiliate_note_ua || ''}${showUkrainian && r.affiliate_note_ua ? '<br/>🇺🇦 ' + r.affiliate_note_ua : ''}
   </div>
   <div class="plat-grid">`;
 
       // Store all data for "copy all"
       const allData = [];
 
-      pkgs.forEach((pkg, idx) => {
+      pkgs.forEach(pkg => {
         const pc = PLATFORM_CONFIG[pkg.platform] || {};
-        const desc = pkg.description || '';
+        const titleLocal = pkg.title_local || pkg.title_ua || '';
+        const descLocal = pkg.description_local || pkg.description_ua || '';
+        const titleUa = pkg.title_ua || '';
+        const descUa = pkg.description_ua || '';
         const tags = (pkg.hashtags || []).map(t => t.startsWith('#') ? t : '#' + t);
-        const charCount = desc.length;
+        const charCount = descLocal.length;
         const maxC = pc.maxChars || 2200;
         const charPct = Math.min(charCount / maxC * 100, 100);
         const charColor = charPct > 90 ? 'var(--red)' : charPct > 70 ? 'var(--amber)' : 'var(--green)';
-        const fullText = `${pkg.title}\n\n${desc}\n\n${tags.join(' ')}`;
+        const fullText = showUkrainian
+          ? `${titleLocal}\n\n${descLocal}\n\n🇺🇦 ${titleUa}\n\n${descUa}\n\n${tags.join(' ')}`
+          : `${titleLocal}\n\n${descLocal}\n\n${tags.join(' ')}`;
         allData.push({ name: pc.name, text: fullText });
 
         const safeText = fullText.replace(/\\/g, '\\\\').replace(/`/g, "'").replace(/"/g, "'");
         const cardId = 'pkg_' + pkg.platform;
+        const localThumb = pkg.thumbnail_idea_local || pkg.thumbnail_idea_ua || '';
+        const localBestTime = pkg.best_time_local || pkg.best_time_ua || '—';
+        const localReach = pkg.reach_estimate_local || pkg.reach_estimate_ua || '—';
+        const localNotes = pkg.notes_local || '';
 
         h += `
     <div class="plat-card" id="card-${pkg.platform}">
       <div class="plat-head" style="border-left:3px solid ${pc.color}">
         <span class="plat-icon">${pc.icon}</span>
         <span class="plat-name">${pc.name}</span>
-        <span class="plat-limit">${charCount}/${maxC} симв.</span>
+        <span class="plat-limit">${charCount}/${maxC} local chars</span>
       </div>
       <div class="plat-body">
-        <!-- TITLE -->
         <div class="plat-field">
-          <div class="plat-fl"><span>ЗАГОЛОВОК</span>${CB(pkg.title || '', 'tit_' + pkg.platform)}</div>
-          <div class="plat-text" style="font-weight:700;color:var(--t1)">${pkg.title || '—'}</div>
+          <div class="plat-fl"><span>ЗАГОЛОВОК · ЛОКАЛЬНО</span>${CB(titleLocal || '', 'tit_' + pkg.platform)}</div>
+          <div class="plat-text" style="font-weight:700;color:var(--t1)">${titleLocal || '—'}</div>
         </div>
-        <!-- DESCRIPTION -->
+        ${showUkrainian ? `<div class="plat-field"><div class="plat-fl"><span>ЗАГОЛОВОК · УКРАЇНСЬКОЮ</span>${CB(titleUa || '', 'titua_' + pkg.platform)}</div><div class="plat-text" style="font-weight:700;color:var(--t1)">${titleUa || '—'}</div></div>` : ''}
         <div class="plat-field">
-          <div class="plat-fl">
-            <span>ОПИС</span>
-            ${CB(desc, 'desc_' + pkg.platform)}
-          </div>
-          <div class="plat-text">${desc.replace(/\n/g, '<br/>')}</div>
+          <div class="plat-fl"><span>ОПИС · ЛОКАЛЬНО</span>${CB(descLocal, 'desc_' + pkg.platform)}</div>
+          <div class="plat-text">${descLocal.replace(/\n/g, '<br/>')}</div>
           <div style="height:2px;border-radius:1px;background:var(--b1);margin-top:6px;overflow:hidden">
             <div style="height:100%;width:${charPct}%;background:${charColor};border-radius:1px;transition:width .5s"></div>
           </div>
         </div>
-        <!-- HASHTAGS -->
+        ${showUkrainian ? `<div class="plat-field"><div class="plat-fl"><span>ОПИС · УКРАЇНСЬКОЮ</span>${CB(descUa, 'descua_' + pkg.platform)}</div><div class="plat-text">${descUa.replace(/\n/g, '<br/>')}</div></div>` : ''}
         <div class="plat-field">
           <div class="plat-fl"><span>ХЕШТЕГИ (${tags.length})</span>${CB(tags.join(' '), 'tags_' + pkg.platform)}</div>
           <div class="plat-tags">${tags.map(t => `<span class="plat-tag">${t}</span>`).join('')}</div>
         </div>
-        <!-- THUMBNAIL (YouTube only) -->
-        ${pkg.thumbnail_idea ? `<div class="plat-field">
-          <div class="plat-fl"><span>МІНІАТЮРА / ОБКЛАДИНКА</span></div>
-          <div class="plat-text" style="color:var(--t3)">${pkg.thumbnail_idea}</div>
-        </div>` : ''}
+        ${localThumb ? `<div class="plat-field"><div class="plat-fl"><span>МІНІАТЮРА / ОБКЛАДИНКА</span></div><div class="plat-text" style="color:var(--t2)">${localThumb}${showUkrainian && pkg.thumbnail_idea_ua ? '<br/><br/>🇺🇦 ' + pkg.thumbnail_idea_ua : ''}</div></div>` : ''}
       </div>
       <div class="plat-foot">
         <div>
-          <div class="plat-time">🕒 ${pkg.best_time}</div>
-          <div style="font-family:var(--m);font-size:8px;color:var(--blue);margin-top:2px">📊 ${pkg.reach_estimate || '—'}</div>
-          ${pkg.notes ? `<div style="font-family:var(--m);font-size:8px;color:var(--amber);margin-top:2px">💡 ${pkg.notes}</div>` : ''}
+          <div class="plat-time">🕒 ${localBestTime}${showUkrainian && pkg.best_time_ua ? `<br/><span style="color:var(--t2)">🇺🇦 ${pkg.best_time_ua}</span>` : ''}</div>
+          <div style="font-family:var(--m);font-size:8px;color:var(--blue);margin-top:2px">📊 ${localReach}${showUkrainian && pkg.reach_estimate_ua ? ` · 🇺🇦 ${pkg.reach_estimate_ua}` : ''}</div>
+          ${(localNotes || pkg.notes_ua) ? `<div style="font-family:var(--m);font-size:8px;color:var(--amber);margin-top:2px">💡 ${localNotes}${showUkrainian && pkg.notes_ua ? '<br/>🇺🇦 ' + pkg.notes_ua : ''}</div>` : ''}
         </div>
         <button class="plat-copy-all" id="${cardId}" onclick="cp('${cardId}',\`${safeText}\`)">📋 Копіювати все</button>
       </div>
     </div>`;
       });
-
       h += `</div>`;
 
       // Store for global copy
@@ -8779,19 +9097,115 @@ Strategies: persona=different viewer types, city=different cities, angle=differe
     ═══════════════════════════════════════════════ */
 
     /* Config */
-    let VF_CFG = { elKey: '', pxKey: '' };
-    (() => { try { const s = JSON.parse(localStorage.getItem('cos4_vf_cfg') || '{}'); VF_CFG.elKey = s.elKey || ''; VF_CFG.pxKey = s.pxKey || ''; } catch { } })();
-    function saveVfConfig() {
-      VF_CFG.elKey = (document.getElementById('vf-el-key')?.value || '').trim();
-      VF_CFG.pxKey = (document.getElementById('vf-px-key')?.value || '').trim();
-      localStorage.setItem('cos4_vf_cfg', JSON.stringify(VF_CFG));
-    }
-    function loadVfConfig() {
-      if (VF_CFG.elKey) { const el = document.getElementById('vf-el-key'); if (el) el.value = VF_CFG.elKey; }
-      if (VF_CFG.pxKey) { const el = document.getElementById('vf-px-key'); if (el) el.value = VF_CFG.pxKey; }
+    let VF_CFG = {};
+    function saveVfConfig() { }
+    function loadVfConfig() { }
+
+    let VF_AUTO = { services: null, readiness: null, currentJobId: '', pollTimer: null };
+    let VF_WIZARD = { phase: 'idle', error: '', seed: null, job: null };
+
+    function getAutoVideoFactorySeed() {
+      const latestHook = DBv4.hooks().find(item => item?.hook_text);
+      const latestGenome = DB.genomes().find(item => item?.title);
+      const latestCluster = DBv4.monopoly().find(item => item?.topic);
+      const fallbackTopic = `Nobody tells ${MARKET.cityEn[0]} about this ${NICHE.topics[0]} that actually works`;
+      const topic = latestHook?.hook_text || latestGenome?.title || latestCluster?.topic || fallbackTopic;
+      const product = NICHE.products?.[0] || 'Affiliate product';
+      return {
+        topic,
+        product,
+        asin: 'B08XMP6STR',
+        persona: latestHook?.persona || latestGenome?.genes?.persona || 'renter',
+        city: latestHook?.city || MARKET.cityEn[0],
+        source: latestHook?.hook_text ? 'остання winning hook' : latestGenome?.title ? 'останній genome' : latestCluster?.topic ? 'останній monopoly cluster' : 'базовий ринковий шаблон'
+      };
     }
 
-    let VF_AUTO = { services: null, currentJobId: '', pollTimer: null };
+    function renderVideoFactoryAutofillCard(seed) {
+      const el = document.getElementById('vf-auto-topic-card');
+      if (!el) return;
+      el.innerHTML = `
+        <div style="font-family:var(--m);font-size:8px;color:var(--blue);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">Автопідстановка</div>
+        <div style="font-size:13px;font-weight:800;margin-bottom:4px">${escapeHtml(seed.topic)}</div>
+        <div style="font-family:var(--m);font-size:8px;color:var(--t3);line-height:1.8">Джерело: ${escapeHtml(seed.source)} · Продукт: ${escapeHtml(seed.product)} · Місто: ${escapeHtml(seed.city)}</div>
+      `;
+    }
+
+    function renderVideoFactoryWizard() {
+      const el = document.getElementById('vf-mobile-steps');
+      const resultEl = document.getElementById('vf-mobile-result');
+      const readinessEl = document.getElementById('vf-mobile-readiness');
+      const runBtn = document.getElementById('vf-mobile-run-btn');
+      if (runBtn) runBtn.disabled = VF_WIZARD.phase === 'running';
+      if (readinessEl) {
+        const current = vfCurrentReadiness();
+        readinessEl.innerHTML = current ? `
+          <div style="border:1px solid ${current.ready ? 'var(--green-bd)' : 'var(--amber-bd)'};background:${current.ready ? 'var(--green-bg)' : 'var(--amber-bg)'};border-radius:12px;padding:10px">
+            <div style="font-family:var(--m);font-size:8px;color:${current.ready ? 'var(--green)' : 'var(--amber)'};text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">${current.ready ? 'Середовище готове' : 'Потрібна увага'}</div>
+            <div style="font-size:11px;line-height:1.7">${escapeHtml(current.summary || 'Онови статус для перевірки')}</div>
+          </div>` : '';
+      }
+      if (!el) return;
+      const job = VF_WIZARD.job;
+      const seed = VF_WIZARD.seed || getAutoVideoFactorySeed();
+      const steps = [
+        {
+          title: '1. Автотема підготовлена',
+          desc: seed.topic,
+          state: seed.topic ? 'done' : 'active'
+        },
+        {
+          title: '2. Render environment перевірено',
+          desc: vfCurrentReadiness()?.summary || 'Перевіряю доступність сервісів',
+          state: VF_WIZARD.phase === 'running' ? 'active' : (vfCurrentReadiness()?.ready ? 'done' : 'error')
+        },
+        {
+          title: '3. Скрипт і голос',
+          desc: job?.voiceResult?.status ? `Voice: ${job.voiceResult.status}` : (VF_WIZARD.phase === 'running' ? 'Сервер готує сценарій та озвучку' : 'Очікує запуску'),
+          state: job?.voiceResult ? (job.voiceResult.status === 'completed' ? 'done' : 'error') : (VF_WIZARD.phase === 'running' ? 'active' : 'idle')
+        },
+        {
+          title: '4. Кліпи і рендер',
+          desc: job?.renderResult?.status ? `Render: ${job.renderResult.status}` : (VF_WIZARD.phase === 'running' ? 'Сервер підбирає кліпи та збирає відео' : 'Очікує запуску'),
+          state: job?.renderResult ? (job.renderResult.status === 'completed' ? 'done' : 'error') : (VF_WIZARD.phase === 'running' ? 'active' : 'idle')
+        },
+        {
+          title: '5. Готовий результат',
+          desc: job?.renderResult?.publicUrl ? 'MP4 готовий до відкриття' : (VF_WIZARD.error || 'Після завершення тут з’явиться результат'),
+          state: job?.renderResult?.publicUrl ? 'done' : (VF_WIZARD.error ? 'error' : (VF_WIZARD.phase === 'running' ? 'active' : 'idle'))
+        }
+      ];
+      el.innerHTML = steps.map((step, index) => `
+        <div class="vf-mobile-step ${step.state === 'done' ? 'is-done' : step.state === 'active' ? 'is-active' : step.state === 'error' ? 'is-error' : ''}">
+          <div class="vf-mobile-step-badge">${index + 1}</div>
+          <div>
+            <div style="font-size:12px;font-weight:700;margin-bottom:3px">${escapeHtml(step.title)}</div>
+            <div style="font-family:var(--m);font-size:8px;color:var(--t3);line-height:1.7">${escapeHtml(step.desc)}</div>
+          </div>
+        </div>
+      `).join('');
+      if (resultEl && !job) {
+        resultEl.innerHTML = `<div style="font-family:var(--m);font-size:8px;color:var(--t3)">Результат з’явиться тут після запуску.</div>`;
+      }
+    }
+
+    function refreshVideoFactoryAutofill(force = false) {
+      const seed = getAutoVideoFactorySeed();
+      VF_WIZARD.seed = seed;
+      const topicEl = document.getElementById('vf-topic');
+      const productEl = document.getElementById('vf-product');
+      const asinEl = document.getElementById('vf-asin');
+      const personaEl = document.getElementById('vf-persona');
+      const cityEl = document.getElementById('vf-city');
+      if (topicEl && (force || !topicEl.value.trim())) topicEl.value = seed.topic;
+      if (productEl && (force || !productEl.value.trim())) productEl.value = seed.product;
+      if (asinEl && (force || !asinEl.value.trim())) asinEl.value = seed.asin;
+      if (personaEl && (force || !personaEl.value)) personaEl.value = seed.persona;
+      if (cityEl && (force || !cityEl.value.trim())) cityEl.value = seed.city;
+      renderVideoFactoryAutofillCard(seed);
+      renderVideoFactoryWizard();
+      return seed;
+    }
 
     function vfServiceChip(name, ok) {
       const bg = ok ? 'var(--green-bg)' : 'var(--amber-bg)';
@@ -8800,19 +9214,66 @@ Strategies: persona=different viewer types, city=different cities, angle=differe
       return `<span style="display:inline-flex;align-items:center;gap:5px;padding:4px 8px;border-radius:5px;background:${bg};border:1px solid ${bd};color:${col};font-family:var(--m);font-size:8px;text-transform:uppercase;letter-spacing:.06em">${ok ? 'OK' : 'TODO'} ${name}</span>`;
     }
 
+    function vfCurrentReadiness() {
+      const mode = document.getElementById('vf-render-mode')?.value || 'live';
+      return mode === 'dry' ? VF_AUTO.readiness?.dryRun : VF_AUTO.readiness?.liveRun;
+    }
+
+    function syncAutomationRunState() {
+      const btn = document.getElementById('vf-full-btn');
+      const readiness = vfCurrentReadiness();
+      if (!btn) return;
+      const blocked = readiness && !readiness.ready;
+      btn.disabled = Boolean(blocked);
+      btn.title = blocked ? readiness.summary : '';
+    }
+
     function renderAutomationStatus(data) {
       const el = document.getElementById('vf-auto-services');
+      const readyEl = document.getElementById('vf-auto-readiness');
       if (!el) return;
       const svc = data?.services || {};
+      const readiness = data?.readiness || {};
+      VF_AUTO.services = svc;
+      VF_AUTO.readiness = readiness;
+      const elStatus = document.getElementById('vf-el-status');
+      const pxStatus = document.getElementById('vf-px-status');
+      if (elStatus) {
+        elStatus.textContent = svc.elevenlabs?.configured
+          ? '✅ Підключено через Render environment'
+          : '❌ У Render environment не знайдено ELEVENLABS_API_KEY';
+      }
+      if (pxStatus) {
+        pxStatus.textContent = svc.pexels?.configured
+          ? '✅ Підключено через Render environment'
+          : '❌ У Render environment не знайдено PEXELS_API_KEY';
+      }
       el.innerHTML = [
-        vfServiceChip('Anthropic', svc.anthropic),
-        vfServiceChip('ElevenLabs', svc.elevenlabs),
-        vfServiceChip('Pexels', svc.pexels),
-        vfServiceChip('FFmpeg', svc.ffmpeg),
-        vfServiceChip('Buffer', svc.buffer),
-        vfServiceChip('YouTube', svc.youtube),
-        vfServiceChip('TikTok', svc.tiktok)
+        vfServiceChip('Anthropic', svc.anthropic?.configured),
+        vfServiceChip('ElevenLabs', svc.elevenlabs?.configured),
+        vfServiceChip('Pexels', svc.pexels?.configured),
+        vfServiceChip('FFmpeg', svc.ffmpeg?.configured),
+        vfServiceChip('Buffer', svc.buffer?.configured),
+        vfServiceChip('YouTube', svc.youtube?.configured),
+        vfServiceChip('TikTok', svc.tiktok?.configured)
       ].join('');
+      if (readyEl) {
+        const current = vfCurrentReadiness();
+        const notes = Array.isArray(readiness.notes) ? readiness.notes : [];
+        const tone = current?.ready ? { border: 'var(--green-bd)', bg: 'var(--green-bg)', color: 'var(--green)' } : { border: 'var(--amber-bd)', bg: 'var(--amber-bg)', color: 'var(--amber)' };
+        readyEl.innerHTML = `
+          <div style="border:1px solid ${tone.border};background:${tone.bg};border-radius:8px;padding:10px">
+            <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:6px">
+              <div style="font-family:var(--m);font-size:8px;color:${tone.color};text-transform:uppercase;letter-spacing:.08em">${current?.ready ? 'Ready to run' : 'Action required before run'}</div>
+              <div style="font-family:var(--m);font-size:8px;color:var(--t3)">Mode: ${(document.getElementById('vf-render-mode')?.value || 'live') === 'dry' ? 'Dry run' : 'Live render'}</div>
+            </div>
+            <div style="font-size:11px;line-height:1.6;margin-bottom:${notes.length ? '8px' : '0'}">${current?.summary || 'Refresh status to evaluate readiness.'}</div>
+            ${current?.missing?.length ? `<div style="font-family:var(--m);font-size:8px;color:var(--t2);margin-bottom:${notes.length ? '8px' : '0'}">Missing: ${current.missing.join(', ')}</div>` : ''}
+            ${notes.length ? `<div style="display:flex;flex-direction:column;gap:4px">${notes.map(note => `<div style="font-family:var(--m);font-size:8px;color:var(--t3)">• ${note}</div>`).join('')}</div>` : ''}
+          </div>`;
+      }
+      syncAutomationRunState();
+      renderVideoFactoryWizard();
     }
 
     function vfStageState(result, okStatuses) {
@@ -8837,13 +9298,18 @@ Strategies: persona=different viewer types, city=different cities, angle=differe
 
     function renderFullVideoJob(job) {
       const el = document.getElementById('vf-auto-job');
-      if (!el) return;
+      const mobileEl = document.getElementById('vf-mobile-result');
+      if (!el && !mobileEl) return;
 
       if (!job) {
-        el.innerHTML = 'No server-side job yet. Run Generate Full Video to start.';
+        if (el) el.innerHTML = 'No server-side job yet. Run Generate Full Video to start.';
+        if (mobileEl) mobileEl.innerHTML = `<div style="font-family:var(--m);font-size:8px;color:var(--t3)">Результат поки що відсутній. Натисни “Запустити автоматично”.</div>`;
         return;
       }
 
+      VF_WIZARD.job = job;
+      VF_WIZARD.error = '';
+      VF_WIZARD.phase = job.renderResult?.publicUrl ? 'done' : 'running';
       vfSetPipelineFromJob(job);
 
       const voiceState = vfStageState(job.voiceResult, ['completed']);
@@ -8852,18 +9318,23 @@ Strategies: persona=different viewer types, city=different cities, angle=differe
       const publishState = vfStageState(job.publishPlan, ['completed']);
       const analyticsState = vfStageState(job.analyticsPlan, ['completed']);
       const created = job.createdAt ? new Date(job.createdAt).toLocaleString('uk-UA') : '—';
+      const updated = job.updatedAt ? new Date(job.updatedAt).toLocaleString('uk-UA') : created;
       const scenes = job.scriptPlan?.scenes || [];
+      const history = Array.isArray(job.history) ? [...job.history].reverse() : [];
+      const manualPublish = job.manualPublish || {};
+      const manualMetrics = job.manualMetrics || {};
+      const statusColor = ['completed', 'metrics_recorded', 'published_manually'].includes(job.status) ? 'var(--green)' : 'var(--amber)';
 
-      el.innerHTML = `
+      const html = `
         <div style="background:var(--bg);border:1px solid var(--b1);border-radius:8px;padding:12px">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:10px">
             <div>
               <div style="font-size:13px;font-weight:800;margin-bottom:3px">${job.scriptPlan?.title || job.input?.topic || 'Full video job'}</div>
-              <div style="font-family:var(--m);font-size:8px;color:var(--t4)">Job ${job.id || '—'} • ${created}</div>
+              <div style="font-family:var(--m);font-size:8px;color:var(--t4)">Job ${job.id || '—'} • created ${created} • updated ${updated}</div>
             </div>
-            <div style="font-family:var(--m);font-size:9px;color:${job.status === 'completed' ? 'var(--green)' : 'var(--amber)'}">${job.status || 'pending'}</div>
+            <div style="font-family:var(--m);font-size:9px;color:${statusColor}">${job.status || 'pending'}</div>
           </div>
-          <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:10px">
+          <div class="vf-job-status-grid">
             <div style="background:var(--s1);border:1px solid var(--b1);border-radius:6px;padding:8px"><div style="font-family:var(--m);font-size:8px;color:${voiceState.color}">${voiceState.label}</div><div style="font-size:11px;font-weight:700">Voice</div></div>
             <div style="background:var(--s1);border:1px solid var(--b1);border-radius:6px;padding:8px"><div style="font-family:var(--m);font-size:8px;color:${clipState.color}">${clipState.label}</div><div style="font-size:11px;font-weight:700">Clips</div></div>
             <div style="background:var(--s1);border:1px solid var(--b1);border-radius:6px;padding:8px"><div style="font-family:var(--m);font-size:8px;color:${renderState.color}">${renderState.label}</div><div style="font-size:11px;font-weight:700">Render</div></div>
@@ -8875,12 +9346,97 @@ Strategies: persona=different viewer types, city=different cities, angle=differe
             ${job.voiceResult?.publicUrl ? `<a href="${job.voiceResult.publicUrl}" target="_blank" class="btn bb bsm" style="text-decoration:none">Open MP3</a>` : ''}
             <button class="btn bx bsm" onclick="refreshAutomationJob('${job.id}')">Refresh Job</button>
           </div>
+          <div class="vf-job-two-col">
+            <div style="background:var(--s1);border:1px solid var(--b1);border-radius:8px;padding:10px">
+              <div style="font-family:var(--m);font-size:8px;color:var(--t4);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Manual publish</div>
+              <div class="g2" style="gap:8px">
+                <div class="field"><label class="fl">Platform</label><input id="vf-pub-platform" value="${manualPublish.platform || (job.input?.platform || 'TikTok').split(',')[0].trim()}" /></div>
+                <div class="field"><label class="fl">Status</label><select id="vf-pub-status"><option value="published_manually" ${manualPublish.status === 'published_manually' || !manualPublish.status ? 'selected' : ''}>Published manually</option><option value="ready_for_manual_publish" ${manualPublish.status === 'ready_for_manual_publish' ? 'selected' : ''}>Ready for manual publish</option></select></div>
+                <div class="field" style="grid-column:1/-1"><label class="fl">Published URL</label><input id="vf-pub-url" placeholder="https://..." value="${manualPublish.publishedUrl || ''}" /></div>
+                <div class="field" style="grid-column:1/-1"><label class="fl">Notes</label><textarea id="vf-pub-notes" style="min-height:70px">${manualPublish.notes || ''}</textarea></div>
+              </div>
+              <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap">
+                <div style="font-family:var(--m);font-size:8px;color:var(--t3)">${manualPublish.publishedAt ? 'Saved: ' + new Date(manualPublish.publishedAt).toLocaleString('uk-UA') : 'Not saved yet'}</div>
+                <button class="btn ba bsm" onclick="saveManualPublish('${job.id}')">Save publish result</button>
+              </div>
+            </div>
+            <div style="background:var(--s1);border:1px solid var(--b1);border-radius:8px;padding:10px">
+              <div style="font-family:var(--m);font-size:8px;color:var(--t4);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Manual metrics</div>
+              <div class="g2" style="gap:8px">
+                <div class="field"><label class="fl">Views</label><input id="vf-met-views" type="number" min="0" value="${manualMetrics.views || ''}" /></div>
+                <div class="field"><label class="fl">Likes</label><input id="vf-met-likes" type="number" min="0" value="${manualMetrics.likes || ''}" /></div>
+                <div class="field"><label class="fl">Comments</label><input id="vf-met-comments" type="number" min="0" value="${manualMetrics.comments || ''}" /></div>
+                <div class="field"><label class="fl">CTR %</label><input id="vf-met-ctr" type="number" min="0" step="0.01" value="${manualMetrics.ctr || ''}" /></div>
+                <div class="field"><label class="fl">Revenue</label><input id="vf-met-revenue" type="number" min="0" step="0.01" value="${manualMetrics.revenue || ''}" /></div>
+                <div class="field"><label class="fl">Conversions</label><input id="vf-met-conv" type="number" min="0" value="${manualMetrics.conversions || ''}" /></div>
+                <div class="field" style="grid-column:1/-1"><label class="fl">Notes</label><textarea id="vf-met-notes" style="min-height:70px">${manualMetrics.notes || ''}</textarea></div>
+              </div>
+              <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap">
+                <div style="font-family:var(--m);font-size:8px;color:var(--t3)">${manualMetrics.recordedAt ? 'Saved: ' + new Date(manualMetrics.recordedAt).toLocaleString('uk-UA') : 'Not saved yet'}</div>
+                <button class="btn bg bsm" onclick="saveManualMetrics('${job.id}')">Save metrics</button>
+              </div>
+            </div>
+          </div>
           <div style="font-family:var(--m);font-size:8px;color:var(--t4);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">Scenes</div>
-          <div style="display:flex;flex-direction:column;gap:6px">
+          <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px">
             ${scenes.map(scene => `<div style="background:var(--s1);border:1px solid var(--b1);border-radius:6px;padding:8px"><div style="font-family:var(--m);font-size:8px;color:var(--amber);margin-bottom:3px">Scene ${scene.scene_id}</div><div style="font-size:11px;margin-bottom:3px">${scene.voiceover || '—'}</div><div style="font-family:var(--m);font-size:8px;color:var(--t3)">query: ${scene.search_query || '—'} • ${scene.duration_sec || 0}s</div></div>`).join('')}
+          </div>
+          <div style="font-family:var(--m);font-size:8px;color:var(--t4);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">Change log</div>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            ${history.length ? history.map(entry => `<div style="background:var(--s1);border:1px solid var(--b1);border-radius:6px;padding:8px"><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><div style="font-family:var(--m);font-size:8px;color:var(--amber)">${entry.event}</div><div style="font-family:var(--m);font-size:8px;color:var(--t4)">${new Date(entry.timestamp).toLocaleString('uk-UA')}</div></div><div style="margin-top:6px;font-family:var(--m);font-size:8px;color:var(--t2);white-space:pre-wrap">${escapeHtml(JSON.stringify(entry.payload || {}, null, 2))}</div></div>`).join('') : '<div style="background:var(--s1);border:1px solid var(--b1);border-radius:6px;padding:8px;font-family:var(--m);font-size:8px;color:var(--t3)">No changes recorded yet.</div>'}
           </div>
           ${job.renderResult?.commandPreview ? `<div style="margin-top:10px"><div style="font-family:var(--m);font-size:8px;color:var(--t4);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">FFmpeg</div><div style="background:var(--s1);border:1px solid var(--b1);border-radius:6px;padding:8px;font-family:var(--m);font-size:8px;line-height:1.8;word-break:break-all">${job.renderResult.commandPreview}</div></div>` : ''}
         </div>`;
+      if (el) el.innerHTML = html;
+      if (mobileEl) mobileEl.innerHTML = html;
+      renderVideoFactoryWizard();
+    }
+
+    async function saveManualPublish(jobId) {
+      try {
+        const payload = {
+          platform: document.getElementById('vf-pub-platform')?.value || 'Manual',
+          status: document.getElementById('vf-pub-status')?.value || 'published_manually',
+          publishedUrl: document.getElementById('vf-pub-url')?.value.trim() || '',
+          notes: document.getElementById('vf-pub-notes')?.value.trim() || ''
+        };
+        const resp = await fetch('/api/automation/jobs/' + jobId + '/manual-publish', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data?.details || data?.error || ('status ' + resp.status));
+        renderFullVideoJob(data);
+        notify('Manual publish result saved', 'g');
+      } catch (e) {
+        notify('Failed to save publish result: ' + e.message, 'r');
+      }
+    }
+
+    async function saveManualMetrics(jobId) {
+      try {
+        const payload = {
+          views: document.getElementById('vf-met-views')?.value || 0,
+          likes: document.getElementById('vf-met-likes')?.value || 0,
+          comments: document.getElementById('vf-met-comments')?.value || 0,
+          ctr: document.getElementById('vf-met-ctr')?.value || 0,
+          revenue: document.getElementById('vf-met-revenue')?.value || 0,
+          conversions: document.getElementById('vf-met-conv')?.value || 0,
+          notes: document.getElementById('vf-met-notes')?.value.trim() || ''
+        };
+        const resp = await fetch('/api/automation/jobs/' + jobId + '/manual-metrics', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data?.details || data?.error || ('status ' + resp.status));
+        renderFullVideoJob(data);
+        notify('Manual metrics saved', 'g');
+      } catch (e) {
+        notify('Failed to save metrics: ' + e.message, 'r');
+      }
     }
 
     async function refreshAutomationStatus() {
@@ -8888,11 +9444,12 @@ Strategies: persona=different viewer types, city=different cities, angle=differe
         const resp = await fetch('/api/automation/status');
         if (!resp.ok) throw new Error('status ' + resp.status);
         const data = await resp.json();
-        VF_AUTO.services = data.services || {};
         renderAutomationStatus(data);
       } catch (e) {
         const el = document.getElementById('vf-auto-services');
         if (el) el.innerHTML = `<span style="font-family:var(--m);font-size:8px;color:var(--red)">Status unavailable: ${e.message}</span>`;
+        VF_WIZARD.error = e.message;
+        renderVideoFactoryWizard();
       }
     }
 
@@ -8924,9 +9481,9 @@ Strategies: persona=different viewer types, city=different cities, angle=differe
       VF_AUTO.pollTimer = setInterval(() => refreshAutomationJob(jobId, true), 12000);
     }
 
-    async function runFullVideoAutomation() {
-      const topic = document.getElementById('vf-topic')?.value.trim();
-      if (!topic) { notify('Введи тему відео', 'r'); return; }
+    async function runFullVideoAutomation(forceAuto = false) {
+      const seed = refreshVideoFactoryAutofill(forceAuto);
+      const topic = document.getElementById('vf-topic')?.value.trim() || seed.topic;
 
       const payload = {
         topic,
@@ -8936,7 +9493,20 @@ Strategies: persona=different viewer types, city=different cities, angle=differe
         dryRun: (document.getElementById('vf-render-mode')?.value || 'live') === 'dry'
       };
 
+      const readiness = vfCurrentReadiness();
+      if (readiness && !readiness.ready) {
+        VF_WIZARD.phase = 'idle';
+        VF_WIZARD.error = readiness.summary;
+        renderVideoFactoryWizard();
+        notify(readiness.summary, 'r');
+        return;
+      }
+
       const btn = document.getElementById('vf-full-btn');
+      VF_WIZARD.phase = 'running';
+      VF_WIZARD.error = '';
+      VF_WIZARD.job = null;
+      renderVideoFactoryWizard();
       if (btn) btn.disabled = true;
       ld('videofactory', true, 'Running full video automation on server...');
 
@@ -8956,6 +9526,9 @@ Strategies: persona=different viewer types, city=different cities, angle=differe
         startAutomationPolling(data.id);
         notify(`Full video job ${data.id.slice(-6)} created`, 'g');
       } catch (e) {
+        VF_WIZARD.phase = 'idle';
+        VF_WIZARD.error = e.message;
+        renderVideoFactoryWizard();
         notify('Full video automation failed: ' + e.message, 'r');
       } finally {
         ld('videofactory', false);
@@ -8981,6 +9554,16 @@ Strategies: persona=different viewer types, city=different cities, angle=differe
       document.getElementById('vf-asin').value = 'B08XMP6STR';
       document.getElementById('vf-city').value = MARKET.cityEn[0];
       document.getElementById('vf-persona').value = 'renter';
+      VF_WIZARD.seed = {
+        topic: document.getElementById('vf-topic').value,
+        product: document.getElementById('vf-product').value,
+        asin: document.getElementById('vf-asin').value,
+        persona: document.getElementById('vf-persona').value,
+        city: document.getElementById('vf-city').value,
+        source: 'demo'
+      };
+      renderVideoFactoryAutofillCard(VF_WIZARD.seed);
+      renderVideoFactoryWizard();
       runVideoFactory();
     }
 
@@ -9015,51 +9598,26 @@ Rules:
 
     /* ── AGENT 2: VOICE (ElevenLabs) ── */
     async function agentVoice(fullScript, voiceStyle) {
-      if (!VF_CFG.elKey) return { status: 'no_key', url: null, note: 'Додай ElevenLabs API ключ для автоматичної озвучки' };
       try {
-        // ElevenLabs voice IDs (free tier)
-        const VOICES = { energetic: 'EXAVITQu4vr4xnSDxMaL', calm: '21m00Tcm4TlvDq8ikWAM', urgent: 'AZnzlk1XvdvUeBnXmlld', friendly: 'MF3mGyEYCl7XYWbV9V6O' };
-        const voiceId = VOICES[voiceStyle] || VOICES.friendly;
-        const resp = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
+        const resp = await fetch('/api/automation/tools/voice-preview', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'xi-api-key': VF_CFG.elKey },
-          body: JSON.stringify({ text: fullScript, model_id: 'eleven_monolingual_v1', voice_settings: { stability: 0.5, similarity_boost: 0.75 } })
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: fullScript, voiceStyle })
         });
-        if (!resp.ok) throw new Error('ElevenLabs: ' + resp.status);
-        const blob = await resp.blob();
-        const url = URL.createObjectURL(blob);
-        return { status: 'ok', url, blob, note: 'MP3 готовий до завантаження' };
+        const data = await resp.json().catch(() => ({}));
+        if (!resp.ok) throw new Error(data?.error || ('Voice: ' + resp.status));
+        return { status: data?.status === 'completed' ? 'ok' : data?.status || 'ok', url: data?.publicUrl || null, note: 'MP3 згенеровано через Render environment' };
       } catch (e) {
-        return { status: 'error', url: null, note: 'Помилка ElevenLabs: ' + e.message };
+        return { status: 'error', url: null, note: 'Помилка озвучки через Render environment: ' + e.message };
       }
     }
 
     /* ── AGENT 3: VISUALS (Pexels) ── */
     async function agentVisuals(scenes) {
-      const results = [];
+      const fallbackResults = [];
       for (const scene of (scenes || [])) {
         const keywords = (scene.visual_keywords || []).slice(0, 2).join(' ');
-        if (!keywords) { results.push({ scene_id: scene.id, clips: [] }); continue; }
-        if (VF_CFG.pxKey) {
-          try {
-            const r = await fetch(`https://api.pexels.com/videos/search?query=${encodeURIComponent(keywords)}&per_page=3&orientation=portrait`, {
-              headers: { 'Authorization': VF_CFG.pxKey }
-            });
-            const d = await r.json();
-            const clips = (d.videos || []).map(v => ({
-              id: v.id, title: keywords,
-              thumb: v.image,
-              duration: v.duration,
-              url: v.url,
-              download: (v.video_files || []).find(f => f.quality === 'hd' && f.width <= 1080)?.link || v.url,
-              pexels_url: v.url
-            }));
-            results.push({ scene_id: scene.id, label: scene.label, keywords, clips });
-            continue;
-          } catch (e) { console.warn('Pexels error', e); }
-        }
-        // Fallback: Pexels search link
-        results.push({
+        fallbackResults.push({
           scene_id: scene.id, label: scene.label, keywords,
           clips: [{
             id: 0, title: keywords, thumb: null,
@@ -9068,7 +9626,19 @@ Rules:
           }]
         });
       }
-      return results;
+      try {
+        const r = await fetch('/api/automation/tools/visual-search', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ scenes })
+        });
+        const data = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(data?.error || (`Pexels: ${r.status}`));
+        return data?.scenes || fallbackResults;
+      } catch (e) {
+        console.warn('Pexels Render environment fallback', e);
+        return fallbackResults;
+      }
     }
 
     /* ── AGENT 4: CAPCUT ASSEMBLY KIT ── */
@@ -9321,12 +9891,17 @@ Rules:
     /* Hook into DOMContentLoaded for VF config restore */
     document.addEventListener('DOMContentLoaded', () => {
       loadVfConfig();
+      refreshVideoFactoryAutofill();
       refreshAutomationStatus();
+      document.getElementById('vf-render-mode')?.addEventListener('change', () => renderAutomationStatus({ services: VF_AUTO.services || {}, readiness: VF_AUTO.readiness || {} }));
       const lastJobId = localStorage.getItem('cos10_vf_last_job') || '';
       if (lastJobId) {
         VF_AUTO.currentJobId = lastJobId;
         refreshAutomationJob(lastJobId, true);
         startAutomationPolling(lastJobId);
+      }
+      if (new URL(window.location.href).searchParams.get('view') === 'mobile-vf') {
+        go('videofactory', document.getElementById('ni-videofactory'));
       }
     });
 
@@ -9753,11 +10328,11 @@ Rules: Natural spoken language, no "um/ah", direct, energetic. Include ONE nativ
       },
       {
         id: 'elevenlabs_key', layer: 'system', cat: 'API', label: 'ElevenLabs (озвучка)', icon: '🎙',
-        run: () => { const k = VF_CFG?.elKey || ''; return k ? { ok: true, val: '✓ Налаштовано' } : { ok: null, warn: true, val: 'Не налаштовано', fix: 'elevenlabs.io → безкоштовно → вставти в Video Factory', fixFn: 'goToVideoFactory' } }
+        run: () => VF_AUTO?.services?.elevenlabs?.configured ? { ok: true, val: '✓ Render environment' } : { ok: null, warn: true, val: 'Не налаштовано', fix: 'Додай ELEVENLABS_API_KEY у Render environment', fixFn: 'goToVideoFactory' }
       },
       {
         id: 'pexels_key', layer: 'system', cat: 'API', label: 'Pexels (кліпи)', icon: '🎥',
-        run: () => { const k = VF_CFG?.pxKey || ''; return k ? { ok: true, val: '✓ Налаштовано' } : { ok: null, warn: true, val: 'Не налаштовано', fix: 'pexels.com/api → безкоштовно → Video Factory', fixFn: 'goToVideoFactory' } }
+        run: () => VF_AUTO?.services?.pexels?.configured ? { ok: true, val: '✓ Render environment' } : { ok: null, warn: true, val: 'Не налаштовано', fix: 'Додай PEXELS_API_KEY у Render environment', fixFn: 'goToVideoFactory' }
       },
       {
         id: 'heygen_key', layer: 'system', cat: 'API', label: 'HeyGen (AI аватар)', icon: '🎭',

@@ -17,6 +17,12 @@ const PORT = process.env.PORT || 3000;
 const ANTHROPIC_MODEL = process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-20250514';
 const ELEVENLABS_VOICE_ID = process.env.ELEVENLABS_VOICE_ID || '21m00Tcm4TlvDq8ikWAM';
 const FFMPEG_PATH = process.env.FFMPEG_PATH || 'ffmpeg';
+const ELEVENLABS_VOICE_PRESETS = {
+  energetic: 'EXAVITQu4vr4xnSDxMaL',
+  calm: '21m00Tcm4TlvDq8ikWAM',
+  urgent: 'AZnzlk1XvdvUeBnXmlld',
+  friendly: 'MF3mGyEYCl7XYWbV9V6O'
+};
 
 const RUNTIME_DIR = path.join(__dirname, 'runtime');
 const AUDIO_DIR = path.join(RUNTIME_DIR, 'audio');
@@ -53,6 +59,30 @@ async function ensureRuntimeDirs() {
 
 function jsonError(res, status, error, details) {
   return res.status(status).json({ error, ...(details ? { details } : {}) });
+}
+
+function getEnvConfig(key) {
+  const value = process.env[key];
+  return {
+    configured: Boolean(value),
+    source: value ? 'render_environment' : 'missing'
+  };
+}
+
+function mapPexelsVideo(video, keywords = '') {
+  return {
+    id: video?.id || 0,
+    title: keywords,
+    thumb: video?.image || null,
+    duration: video?.duration || null,
+    url: video?.url || null,
+    download:
+      video?.video_files?.find(file => file.quality === 'hd' && file.width <= 1080)?.link ||
+      pickPexelsFile(video?.video_files || [])?.link ||
+      video?.url ||
+      null,
+    pexels_url: video?.url || null
+  };
 }
 
 function cleanClaudeText(data) {
@@ -457,15 +487,70 @@ async function readJob(jobId) {
   return JSON.parse(content);
 }
 
+
+function appendJobHistory(job, event, payload = {}) {
+  const history = Array.isArray(job.history) ? job.history : [];
+  const entry = {
+    id: uid('event'),
+    event,
+    timestamp: new Date().toISOString(),
+    payload
+  };
+  return {
+    ...job,
+    history: [...history, entry],
+    updatedAt: entry.timestamp
+  };
+}
+
+
+function getAutomationReadiness(services) {
+  const commonMissing = [];
+  if (!services.elevenlabs.configured) commonMissing.push('ELEVENLABS_API_KEY');
+  if (!services.pexels.configured) commonMissing.push('PEXELS_API_KEY');
+
+  const liveMissing = [...commonMissing];
+  if (!services.ffmpeg.configured) liveMissing.push('FFMPEG_PATH');
+
+  return {
+    dryRun: {
+      ready: commonMissing.length === 0,
+      missing: commonMissing,
+      summary: commonMissing.length === 0
+        ? 'Dry run can build a full asset-backed job.'
+        : `Dry run still needs: ${commonMissing.join(', ')}`
+    },
+    liveRun: {
+      ready: liveMissing.length === 0,
+      missing: liveMissing,
+      summary: liveMissing.length === 0
+        ? 'Live render is ready.'
+        : `Live render is blocked by: ${liveMissing.join(', ')}`
+    },
+    notes: [
+      services.anthropic.configured ? 'Anthropic is configured.' : 'Anthropic is optional because fallback script generation is enabled.',
+      services.buffer.configured || services.youtube.configured
+        ? 'Auto publish credentials are partially configured, but manual publish is still supported.'
+        : 'Publishing is expected to be manual in the current workflow.',
+      services.youtube.configured || services.tiktok.configured
+        ? 'Analytics credentials exist, but manual metrics entry remains available.'
+        : 'Metrics collection is expected to be manual in the current workflow.'
+    ]
+  };
+}
+
 function getAutomationStatus(ffmpegAvailable) {
   return {
-    anthropic: Boolean(process.env.ANTHROPIC_API_KEY),
-    elevenlabs: Boolean(process.env.ELEVENLABS_API_KEY),
-    pexels: Boolean(process.env.PEXELS_API_KEY),
-    buffer: Boolean(process.env.BUFFER_ACCESS_TOKEN),
-    youtube: Boolean(process.env.YOUTUBE_API_KEY),
-    tiktok: Boolean(process.env.TIKTOK_SESSION_ID),
-    ffmpeg: ffmpegAvailable
+    anthropic: getEnvConfig('ANTHROPIC_API_KEY'),
+    elevenlabs: getEnvConfig('ELEVENLABS_API_KEY'),
+    pexels: getEnvConfig('PEXELS_API_KEY'),
+    buffer: getEnvConfig('BUFFER_ACCESS_TOKEN'),
+    youtube: getEnvConfig('YOUTUBE_API_KEY'),
+    tiktok: getEnvConfig('TIKTOK_SESSION_ID'),
+    ffmpeg: {
+      configured: ffmpegAvailable,
+      source: ffmpegAvailable ? 'render_environment' : 'missing'
+    }
   };
 }
 
@@ -475,16 +560,152 @@ app.get('/health', async (_req, res) => {
 
 app.get('/api/automation/status', async (_req, res) => {
   const ffmpegAvailable = await isFfmpegAvailable();
+  const services = getAutomationStatus(ffmpegAvailable);
   res.json({
     status: 'ok',
-    services: getAutomationStatus(ffmpegAvailable)
+    services,
+    readiness: getAutomationReadiness(services)
   });
+});
+
+app.post('/api/automation/tools/voice-preview', async (req, res) => {
+  try {
+    const text = typeof req.body?.text === 'string' ? req.body.text.trim() : '';
+    const voiceStyle = typeof req.body?.voiceStyle === 'string' ? req.body.voiceStyle.trim() : '';
+    const voiceId = ELEVENLABS_VOICE_PRESETS[voiceStyle] || req.body?.voiceId || ELEVENLABS_VOICE_ID;
+
+    if (!text) return jsonError(res, 400, 'Voice text is required.');
+    if (!process.env.ELEVENLABS_API_KEY) {
+      return jsonError(res, 503, 'ELEVENLABS_API_KEY is not configured in the Render environment.', {
+        source: 'render_environment'
+      });
+    }
+
+    const voiceResult = await generateVoiceAsset({
+      jobId: uid('voice_preview'),
+      text,
+      voiceId
+    });
+
+    res.json(voiceResult);
+  } catch (error) {
+    console.error('voice preview failed', error.message);
+    jsonError(res, 500, 'Failed to generate voice preview.', error.message);
+  }
+});
+
+app.post('/api/automation/tools/visual-search', async (req, res) => {
+  try {
+    const scenes = Array.isArray(req.body?.scenes) ? req.body.scenes : [];
+    if (!scenes.length) return res.json({ status: 'ok', scenes: [] });
+
+    if (!process.env.PEXELS_API_KEY) {
+      return jsonError(res, 503, 'PEXELS_API_KEY is not configured in the Render environment.', {
+        source: 'render_environment'
+      });
+    }
+
+    const results = [];
+    for (const scene of scenes) {
+      const keywords = Array.isArray(scene?.visual_keywords)
+        ? scene.visual_keywords.slice(0, 2).join(' ')
+        : String(scene?.search_query || '').trim();
+
+      if (!keywords) {
+        results.push({
+          scene_id: scene?.id || scene?.scene_id || 0,
+          label: scene?.label || '',
+          keywords: '',
+          clips: []
+        });
+        continue;
+      }
+
+      const searchResponse = await axios.get('https://api.pexels.com/videos/search', {
+        headers: { Authorization: process.env.PEXELS_API_KEY },
+        params: {
+          query: keywords,
+          per_page: 3,
+          orientation: 'portrait'
+        },
+        timeout: 60000
+      });
+
+      results.push({
+        scene_id: scene?.id || scene?.scene_id || 0,
+        label: scene?.label || '',
+        keywords,
+        clips: (searchResponse.data.videos || []).map(video => mapPexelsVideo(video, keywords))
+      });
+    }
+
+    res.json({ status: 'ok', scenes: results });
+  } catch (error) {
+    console.error('visual search failed', error.message);
+    jsonError(res, 500, 'Failed to load Pexels clips.', error.message);
+  }
 });
 
 app.get('/api/automation/jobs/:jobId', async (req, res) => {
   try {
     const job = await readJob(req.params.jobId);
     res.json(job);
+  } catch (error) {
+    jsonError(res, 404, 'Job not found', error.message);
+  }
+});
+
+
+app.patch('/api/automation/jobs/:jobId/manual-publish', async (req, res) => {
+  try {
+    const job = await readJob(req.params.jobId);
+    const body = req.body || {};
+    const manualPublish = {
+      status: body.status || 'published_manually',
+      platform: body.platform || 'Manual',
+      publishedUrl: body.publishedUrl || '',
+      notes: body.notes || '',
+      publishedAt: body.publishedAt || new Date().toISOString()
+    };
+
+    let nextJob = {
+      ...job,
+      status: manualPublish.status === 'published_manually' ? 'published_manually' : job.status,
+      manualPublish
+    };
+    nextJob = appendJobHistory(nextJob, 'manual_publish_saved', manualPublish);
+
+    await writeJob(nextJob);
+    res.json(nextJob);
+  } catch (error) {
+    jsonError(res, 404, 'Job not found', error.message);
+  }
+});
+
+app.patch('/api/automation/jobs/:jobId/manual-metrics', async (req, res) => {
+  try {
+    const job = await readJob(req.params.jobId);
+    const body = req.body || {};
+    const manualMetrics = {
+      views: Number(body.views || 0),
+      likes: Number(body.likes || 0),
+      comments: Number(body.comments || 0),
+      ctr: Number(body.ctr || 0),
+      revenue: Number(body.revenue || 0),
+      conversions: Number(body.conversions || 0),
+      notes: body.notes || '',
+      recordedAt: body.recordedAt || new Date().toISOString()
+    };
+
+    let nextJob = {
+      ...job,
+      status: 'metrics_recorded',
+      manualMetrics
+    };
+    nextJob = appendJobHistory(nextJob, 'manual_metrics_saved', manualMetrics);
+
+    await writeJob(nextJob);
+    res.json(nextJob);
   } catch (error) {
     jsonError(res, 404, 'Job not found', error.message);
   }
@@ -553,9 +774,11 @@ app.post('/api/automation/full-video', async (req, res) => {
       platform: input.platform || 'TikTok,YouTube Shorts,Instagram'
     });
 
-    const job = {
+    const createdAt = new Date().toISOString();
+    let job = {
       id: jobId,
-      createdAt: new Date().toISOString(),
+      createdAt,
+      updatedAt: createdAt,
       input: {
         topic: input.topic || null,
         product: input.product || null,
@@ -568,8 +791,16 @@ app.post('/api/automation/full-video', async (req, res) => {
       clipResult,
       renderResult,
       publishPlan,
-      analyticsPlan
+      analyticsPlan,
+      manualPublish: null,
+      manualMetrics: null,
+      history: []
     };
+
+    job = appendJobHistory(job, 'job_created', {
+      input: job.input,
+      status: job.status
+    });
 
     await writeJob(job);
     res.json(job);
