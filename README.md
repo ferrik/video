@@ -240,6 +240,8 @@ Add these environment variables in Render as needed:
 - `TIKTOK_SESSION_ID`
 - `FFMPEG_PATH`
 
+For Video Factory and automation endpoints, `ELEVENLABS_API_KEY` and `PEXELS_API_KEY` are read on the server from the Render environment. They should not be entered in the browser UI.
+
 ## Current priority
 
 Do not build `v11` first.
