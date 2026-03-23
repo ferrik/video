@@ -47,10 +47,10 @@
       --b1: #222228;
       --b2: #2c2c34;
       --b3: #383842;
-      --t1: #f4f4f6;
-      --t2: #a0a0b0;
-      --t3: #606070;
-      --t4: #38383f;
+      --t1: #ffffff;
+      --t2: #e4e4e7;
+      --t3: #a1a1aa;
+      --t4: #71717a;
       --amber: #f59e0b;
       --amber2: #d97706;
       --amber-bg: #f59e0b0e;
@@ -7254,19 +7254,35 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               model: APP.config.model,
-              system: sys + '\nRESPOND ONLY WITH VALID JSON. NO MARKDOWN.',
+              system: sys + '\nRESPOND ONLY WITH VALID JSON. NO MARKDOWN OR CONVERSATION.',
               messages: [{ role: 'user', content: usr }]
             })
           });
           if (!r.ok) throw new Error(`API Proxy Status ${r.status}`);
           const d = await r.json();
-          // Anthropic format returned by proxy: d.content[0].text
-          const text = d.content?.map(b => b.text || '').join('') || '';
-          const cleaned = text.replace(/```json|```/g, '').trim();
-          return JSON.parse(cleaned);
+          
+          let text = d.content?.map(b => b.text || '').join('') || '';
+          if (!text && d.message?.content) text = d.message.content; // Fallback for various proxy formats
+
+          // Robust JSON extraction
+          let cleaned = text.trim();
+          if (cleaned.includes('```')) {
+            const match = cleaned.match(/```(?:json)?\s*([\s\S]*?)```/);
+            if (match) cleaned = match[1].trim();
+          }
+          
+          try {
+            return JSON.parse(cleaned);
+          } catch (parseError) {
+            console.error('JSON Parse Error. Raw text:', text);
+            // Attempt even more aggressive extraction if direct parse fails
+            const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+            if (jsonMatch) return JSON.parse(jsonMatch[0]);
+            throw parseError;
+          }
         } catch (e) {
-          console.warn('AI Proxy Call Failed:', e);
-          notify(`AI помилка (Proxy): ${e.message}. Використовую фолбек.`, 'a');
+          console.error('AI Proxy Call Failed:', e);
+          notify(`AI помилка: ${e.message}. Використовую фолбек.`, 'r');
           return fb;
         } finally {
           ld('ai', false);

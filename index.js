@@ -9,14 +9,32 @@ const { promisify } = require('util');
 const { execFile } = require('child_process');
 
 dotenv.config();
-
 const execFileAsync = promisify(execFile);
+
+function checkEnv() {
+  const required = ['ANTHROPIC_API_KEY', 'ELEVENLABS_API_KEY', 'PEXELS_API_KEY'];
+  const missing = required.filter(key => !process.env[key]);
+  if (missing.length > 0) {
+    console.warn('⚠️  Missing recommended environment variables:', missing.join(', '));
+    console.warn('   Some AI features may use fallbacks or fail.');
+  } else {
+    console.log('✅ All core API keys are set.');
+  }
+}
+
+checkEnv();
 const app = express();
 
 const PORT = process.env.PORT || 3000;
 const ANTHROPIC_MODEL = process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-20250514';
 const ELEVENLABS_VOICE_ID = process.env.ELEVENLABS_VOICE_ID || '21m00Tcm4TlvDq8ikWAM';
-const FFMPEG_PATH = process.env.FFMPEG_PATH || 'ffmpeg';
+let FFMPEG_PATH = process.env.FFMPEG_PATH || 'ffmpeg';
+try {
+  const ffmpeg = require('ffmpeg-static');
+  if (ffmpeg) FFMPEG_PATH = ffmpeg;
+} catch (e) {
+  console.log('Using system ffmpeg or FFMPEG_PATH env var.');
+}
 
 const RUNTIME_DIR = path.join(__dirname, 'runtime');
 const AUDIO_DIR = path.join(RUNTIME_DIR, 'audio');
@@ -501,8 +519,9 @@ app.post('/api/chat', async (req, res) => {
     const data = await callAnthropic(system, messages, model);
     res.json(data);
   } catch (error) {
-    console.error('API Error:', error.response?.data || error.message);
-    jsonError(res, error.response?.status || 500, 'AI Call Failed', error.response?.data || error.message);
+    const errorDetails = error.response?.data || error.message;
+    console.error(`❌ AI Proxy Error [${model}]:`, errorDetails);
+    jsonError(res, error.response?.status || 500, 'AI Call Failed', errorDetails);
   }
 });
 
@@ -572,10 +591,12 @@ app.post('/api/automation/full-video', async (req, res) => {
     };
 
     await writeJob(job);
+    console.log(`✅ Job ${jobId} completed successfully.`);
     res.json(job);
   } catch (error) {
-    console.error('Full automation error:', error.response?.data || error.message);
-    jsonError(res, 500, 'Failed to run full automation', error.response?.data || error.message);
+    const errorDetails = error.response?.data || error.message;
+    console.error(`❌ Full automation error [Job ${jobId}]:`, errorDetails);
+    jsonError(res, 500, 'Failed to run full automation', errorDetails);
   }
 });
 
