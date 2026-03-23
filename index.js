@@ -13,10 +13,13 @@ const execFileAsync = promisify(execFile);
 
 function checkEnv() {
   const required = ['ANTHROPIC_API_KEY', 'ELEVENLABS_API_KEY', 'PEXELS_API_KEY'];
+  const recommended = ['OPENAI_API_KEY'];
   const missing = required.filter(key => !process.env[key]);
   if (missing.length > 0) {
-    console.warn('⚠️  Missing recommended environment variables:', missing.join(', '));
-    console.warn('   Some AI features may use fallbacks or fail.');
+    console.warn('⚠️  Missing required environment variables:', missing.join(', '));
+    if (!process.env.OPENAI_API_KEY) {
+      console.warn('   ⚠️  Also missing OPENAI_API_KEY fallback.');
+    }
   } else {
     console.log('✅ All core API keys are set.');
   }
@@ -26,7 +29,8 @@ checkEnv();
 const app = express();
 
 const PORT = process.env.PORT || 3000;
-const ANTHROPIC_MODEL = process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-20250514';
+const ANTHROPIC_MODEL = process.env.ANTHROPIC_MODEL || 'claude-3-5-sonnet-20240620';
+const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
 const ELEVENLABS_VOICE_ID = process.env.ELEVENLABS_VOICE_ID || '21m00Tcm4TlvDq8ikWAM';
 let FFMPEG_PATH = process.env.FFMPEG_PATH || 'ffmpeg';
 try {
@@ -174,8 +178,35 @@ async function callAnthropic(system, messages, model = ANTHROPIC_MODEL, maxToken
   return response.data;
 }
 
+async function callOpenAI(messages, model = OPENAI_MODEL) {
+  if (!process.env.OPENAI_API_KEY) {
+    throw new Error('OPENAI_API_KEY not set on server');
+  }
+
+  const response = await axios.post(
+    'https://api.openai.com/v1/chat/completions',
+    {
+      model,
+      messages,
+      response_format: { type: "json_object" }
+    },
+    {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
+      },
+      timeout: 60000
+    }
+  );
+
+  return response.data.choices[0].message.content;
+}
+
 async function generateScriptPlan(input) {
-  if (!process.env.ANTHROPIC_API_KEY) {
+  const useAnthropic = !!process.env.ANTHROPIC_API_KEY;
+  const useOpenAI = !!process.env.OPENAI_API_KEY;
+
+  if (!useAnthropic && !useOpenAI) {
     return fallbackScriptPlan(input);
   }
 
@@ -202,10 +233,20 @@ async function generateScriptPlan(input) {
   ].join('\n');
 
   try {
-    const data = await callAnthropic(system, [{ role: 'user', content: user }]);
-    const parsed = JSON.parse(cleanClaudeText(data));
+    let parsed;
+    if (useAnthropic) {
+      const data = await callAnthropic(system, [{ role: 'user', content: user }]);
+      parsed = JSON.parse(cleanClaudeText(data));
+    } else {
+      const content = await callOpenAI([
+        { role: 'system', content: system },
+        { role: 'user', content: user }
+      ]);
+      parsed = JSON.parse(content);
+    }
+
     return {
-      source: 'anthropic',
+      source: useAnthropic ? 'anthropic' : 'openai',
       title: parsed.title || `${topic} automation hook`,
       hook: parsed.hook || '',
       cta: parsed.cta || '',
@@ -478,6 +519,7 @@ async function readJob(jobId) {
 function getAutomationStatus(ffmpegAvailable) {
   return {
     anthropic: Boolean(process.env.ANTHROPIC_API_KEY),
+    openai: Boolean(process.env.OPENAI_API_KEY),
     elevenlabs: Boolean(process.env.ELEVENLABS_API_KEY),
     pexels: Boolean(process.env.PEXELS_API_KEY),
     buffer: Boolean(process.env.BUFFER_ACCESS_TOKEN),
