@@ -7607,8 +7607,6 @@ Reality rules: signals from actual user-provided data (Amazon URL, Google Trends
     function sigToFactory(sig) {
       document.getElementById('f-topic').value = sig.title || '';
       document.getElementById('f-product').value = `${sig.product_name || ''} ${sig.product_price || ''}`.trim();
-      if (sig.persona) document.getElementById('f-persona').value = sig.persona;
-      if (sig.hook_type) document.getElementById('f-hook').value = sig.hook_type;
       go('factory', document.getElementById('ni-factory'));
       notify('Реальний сигнал → Фабрика Контенту', 'g');
     }
@@ -7695,6 +7693,14 @@ Reality rules: signals from actual user-provided data (Amazon URL, Google Trends
       } catch (e) {
         if (!silent) notify('Не вдалося завантажити factory meta: ' + e.message, 'r');
       }
+    }
+
+    async function cancelFactoryJob(jobId) {
+      if (!confirm('Зупинити процес? Фабрика перейде у фоновий режим.')) return;
+      stopFactoryPolling();
+      const container = document.getElementById('f-status-container');
+      if (container) container.innerHTML = '<div style="padding:10px;text-align:center;color:var(--t3);font-size:10px;">Процес зупинено або залишено у фоні.</div>';
+      ld('factory', false);
     }
 
     async function runFactory() {
