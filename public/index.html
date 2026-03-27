@@ -4071,16 +4071,20 @@
         </div>
       </div>
 
-      <div class="nav-sec">Конвеєр</div>
-      <div class="ni on" id="ni-signal" onclick="go('signal',this)">
-        <span class="ni-icon">📡</span><span class="ni-label">Радар Сигналів</span>
-        <span class="ni-fix">ВИПРАВ 3</span>
+      <div class="nav-sec">Factory First</div>
+      <div class="ni on" id="ni-factory" onclick="go('factory',this)">
+        <span class="ni-icon">🏭</span><span class="ni-label">Factory Mode</span>
       </div>
-      <div class="ni" id="ni-factory" onclick="go('factory',this)">
-        <span class="ni-icon">🏭</span><span class="ni-label">Фабрика Контенту</span>
+      <div class="ni" id="ni-signal" onclick="go('signal',this)">
+        <span class="ni-icon">📡</span><span class="ni-label">Signal Intelligence</span>
       </div>
-      <div class="ni" id="ni-genome" onclick="go('genome',this)">
-        <span class="ni-icon">🧬</span><span class="ni-label">Теггер Геному</span>
+
+      <div class="nav-sec">Processing</div>
+      <div class="ni" id="ni-videofactory" onclick="go('videofactory',this)">
+        <span class="ni-icon">🎬</span><span class="ni-label">Video Engine</span>
+      </div>
+      <div class="ni" id="ni-publish" onclick="go('publish',this)">
+        <span class="ni-icon">📦</span><span class="ni-label">Ready Packages</span>
       </div>
 
       <div class="nav-sec">Шар Даних</div>
@@ -4401,88 +4405,90 @@
           <div class="ph">
             <div class="ph-row">
               <div>
-                <div class="ph-title">Фабрика <em>Контенту</em></div>
-                <div class="ph-sub">// ІДЕЯ → ЗАЧІПКА → ГЕНОМ → СКРИПТ → ПЕРЕВІРКА ЧЕМПІОНА</div>
+                <div class="ph-title">Factory <em>Mode</em></div>
+                <div class="ph-sub">// ONE-CLICK PRODUCTION · SCRIPT → VOICE → VISUALS → PACKAGE</div>
               </div>
-              <button class="btn ba" onclick="runFactory()">🏭 Генерувати</button>
+              <button class="btn ba" onclick="runFactory()">🏭 Start Factory</button>
             </div>
           </div>
+          
+          <div id="f-status-container"></div>
+
           <div class="g2" style="gap:12px">
             <div>
               <div class="card">
-                <div class="sl">Input</div>
-                <div class="field"><label class="fl">Тема</label><input id="f-topic"
-                    placeholder="spider season Sydney renters 2026" /></div>
+                <div class="sl">Configuration</div>
+                <div class="field"><label class="fl">Topic / Idea</label>
+                  <input id="f-topic" placeholder="e.g. spider season Sydney renters $12 trick" />
+                </div>
+                <div class="field"><label class="fl">Target Product (Amazon)</label>
+                  <input id="f-product" placeholder="e.g. Raid Max AU$18.99" />
+                </div>
                 <div class="g2" style="gap:8px">
-                  <div class="field"><label class="fl">Тип глядача</label>
-                    <select id="f-persona">
-                      <option value="renter">🏠 Орендар</option>
-                      <option value="homeowner">🏡 Власник будинку</option>
-                      <option value="parent">👨‍👩‍👧 Батьки з дітьми</option>
-                      <option value="diy">🔧 Зроби сам</option>
-                      <option value="pet_owner">🐾 Власник тварин</option>
+                  <div class="field"><label class="fl">Market / Region</label>
+                    <select id="f-market">
+                      <option value="AU" selected>Australia (AU)</option>
+                      <option value="US">USA (US)</option>
+                      <option value="UK">United Kingdom (UK)</option>
+                      <option value="CA">Canada (CA)</option>
                     </select>
                   </div>
-                  <div class="field"><label class="fl">Тип зачіпки</label>
-                    <select id="f-hook">
-                      <option value="auto">Авто (AI обирає)</option>
-                      <option value="curiosity_gap">Інтрига (що приховують)</option>
-                      <option value="authority_leak">Викриття експерта</option>
-                      <option value="stats_shock">Шокуюча статистика</option>
-                      <option value="fear_trigger">Тригер страху</option>
+                  <div class="field"><label class="fl">Platforms</label>
+                    <input id="f-platforms" value="TikTok, Shorts, Reels" placeholder="Comma separated" />
+                  </div>
+                </div>
+                <div class="g2" style="gap:8px">
+                  <div class="field"><label class="fl">Target Duration</label>
+                    <select id="f-duration">
+                      <option value="15">15s (Flash)</option>
+                      <option value="24" selected>24s (Standard)</option>
+                      <option value="45">45s (Deep)</option>
+                      <option value="60">60s (Max)</option>
+                    </select>
+                  </div>
+                  <div class="field"><label class="fl">Voice Style</label>
+                    <select id="f-voice-id">
+                      <option value="">Default AI</option>
+                      <option value="pNInz6ob8my8mePbeN9G">Bella (Soft)</option>
+                      <option value="Lcf7u9W9n3AsSp65fE9N">Josh (Action)</option>
                     </select>
                   </div>
                 </div>
                 <div class="g2" style="gap:8px">
-                  <div class="field"><label class="fl">City</label><input id="f-city" value="Sydney" /></div>
-                  <div class="field"><label class="fl">Product</label><input id="f-product"
-                      placeholder="Raid Max AU$18.99" /></div>
-                </div>
-                <div class="g2" style="gap:8px">
-                  <div class="field"><label class="fl">Австралійський сленг</label><select id="f-slang">
-                      <option value="light">Легкий</option>
-                      <option value="medium" selected>Середній</option>
-                      <option value="heavy">Важкий</option>
-                    </select></div>
-                  <div class="field"><label class="fl">Платформа</label><select id="f-platform">
-                      <option>TikTok</option>
-                      <option>Instagram Reels</option>
-                      <option>YouTube Shorts</option>
-                    </select></div>
+                  <div class="field"><label class="fl">Scenes Count</label>
+                    <input type="number" id="f-scenes" value="4" />
+                  </div>
+                  <div class="field"><label class="fl">Render Mode</label>
+                    <select id="f-render-mode">
+                      <option value="live" selected>Full (Voicover + Clips)</option>
+                      <option value="dry">Draft (Script only)</option>
+                    </select>
+                  </div>
                 </div>
               </div>
             </div>
             <div>
-              <div class="card card-a" style="margin-bottom:10px">
-                <div class="sl" style="border-color:var(--amber-bd)">Конвеєр</div>
-                <div class="pipe">
-                  <div class="pn" id="pp1">Idea</div>
-                  <div class="pa">→</div>
-                  <div class="pn" id="pp2">Hook</div>
-                  <div class="pa">→</div>
-                  <div class="pn" id="pp3">Genome</div>
-                  <div class="pa">→</div>
-                  <div class="pn" id="pp4">Script</div>
-                  <div class="pa">→</div>
-                  <div class="pn" id="pp5">Guard</div>
-                  <div class="pa">→</div>
-                  <div class="pn" id="pp6">Champion?</div>
-                </div>
-              </div>
               <div class="card card-dark">
-                <div class="sl">Перевірка Чемпіона (Виправлення №2)</div>
+                <div class="sl">Recent Jobs</div>
+                <div id="f-jobs-history" style="max-height: 300px; overflow-y: auto;"></div>
+                <button class="btn bx bsm" style="width:100%;margin-top:10px" onclick="refreshFactoryJobs()">Refresh History</button>
+              </div>
+              <div class="card card-a" style="margin-top:10px">
+                <div class="sl" style="border-color:var(--amber-bd)">Factory Logic</div>
                 <div style="font-family:var(--m);font-size:9px;color:var(--t3);line-height:1.8">
-                  Після генерації скрипт перевіряється проти Champion Library.<br />
-                  Якщо genes збігаються з Champion ≥70% → <span style="color:var(--amber)">варіація навколо
-                    Champion</span>.<br />
-                  Якщо genes нові → <span style="color:var(--blue)">новий candidate</span>.
+                  The factory uses a multi-agent pipeline:<br/>
+                  1. <b>Signal</b>: Analyzes trends and topic viability.<br/>
+                  2. <b>Script</b>: Generates viral pacing based on market data.<br/>
+                  3. <b>Voice</b>: ElevenLabs synthesis for premium audio.<br/>
+                  4. <b>Clips</b>: Pexels API fetching for B-roll visuals.<br/>
+                  5. <b>Package</b>: Final publishing metadata generation.
                 </div>
               </div>
             </div>
           </div>
           <div class="ld" id="ld-factory">
             <div class="spin"></div>
-            <div class="ld-t" id="ld-factory-t">Generating...</div>
+            <div class="ld-t" id="ld-factory-t">Orchestrating production...</div>
           </div>
           <div class="res" id="r-factory"></div>
         </div>
@@ -7591,82 +7597,347 @@ Reality rules: signals from actual user-provided data (Amazon URL, Google Trends
     }
 
     /* ═══════════════════════════════════════
-       CONTENT FACTORY
+       CONTENT FACTORY v10.0.3 (vNext)
     ═══════════════════════════════════════ */
+    const FACTORY_AUTO = {
+      currentJobId: localStorage.getItem('cos10_factory_last_job') || '',
+      pollTimer: null,
+      mobileMode: localStorage.getItem('cos10_factory_mobile_mode') === '1',
+      meta: {
+        steps: [
+          { key: 'signal_generation', label: 'Сигнал' },
+          { key: 'script_generation', label: 'Скрипт' },
+          { key: 'voice_generation', label: 'Озвучка' },
+          { key: 'clip_fetch', label: 'Кліпи' },
+          { key: 'render_plan', label: 'План' },
+          { key: 'publish_package', label: 'Пакет' },
+          { key: 'save_outputs', label: 'Збереження' },
+          { key: 'done', label: 'Готово' }
+        ],
+        activeStatuses: ['queued', 'running', 'cancelling'],
+        terminalStatuses: ['completed', 'failed', 'cancelled', 'requires_follow_up'],
+        retryableStatuses: ['failed', 'cancelled', 'requires_follow_up'],
+        statusMeta: {
+          queued: { label: 'У черзі', tone: 'amber' },
+          running: { label: 'В роботі', tone: 'amber' },
+          cancelling: { label: 'Зупиняється', tone: 'amber' },
+          completed: { label: 'Завершено', tone: 'green' },
+          failed: { label: 'Помилка', tone: 'red' },
+          cancelled: { label: 'Зупинено', tone: 'muted' },
+          requires_follow_up: { label: 'Потрібен review', tone: 'blue' }
+        },
+        stepStateMeta: {
+          idle: { label: 'очікує', tone: 'muted' },
+          active: { label: 'активно', tone: 'amber' },
+          done: { label: 'готово', tone: 'green' },
+          failed: { label: 'помилка', tone: 'red' },
+          cancelled: { label: 'зупинено', tone: 'muted' },
+          needs_review: { label: 'потрібен review', tone: 'blue' }
+        }
+      }
+    };
+
+    function isFactoryActiveStatus(status) {
+      return (FACTORY_AUTO.meta?.activeStatuses || []).includes(status);
+    }
+
+    function isFactoryTerminalStatus(status) {
+      return (FACTORY_AUTO.meta?.terminalStatuses || []).includes(status);
+    }
+
+    function canRetryFactoryJob(status) {
+      return (FACTORY_AUTO.meta?.retryableStatuses || []).includes(status);
+    }
+
+    function getFactoryStatusMeta(status) {
+      return FACTORY_AUTO.meta?.statusMeta?.[status] || { label: status || 'queued', tone: 'amber' };
+    }
+
+    function getFactoryStepStateMeta(state) {
+      return FACTORY_AUTO.meta?.stepStateMeta?.[state] || { label: state || 'idle', tone: 'muted' };
+    }
+
+    function getFactoryToneColor(tone) {
+      return tone === 'green'
+        ? 'var(--green)'
+        : tone === 'red'
+          ? 'var(--red)'
+          : tone === 'blue'
+            ? 'var(--blue)'
+            : tone === 'muted'
+              ? 'var(--t4)'
+              : 'var(--amber)';
+    }
+
+    async function refreshFactoryMeta(silent = false) {
+      try {
+        const resp = await fetch('/api/factory/meta');
+        if (!resp.ok) throw new Error('status ' + resp.status);
+        const data = await resp.json();
+        FACTORY_AUTO.meta = { ...FACTORY_AUTO.meta, ...(data || {}) };
+      } catch (e) {
+        if (!silent) notify('Не вдалося завантажити factory meta: ' + e.message, 'r');
+      }
+    }
+
     async function runFactory() {
       const topic = document.getElementById('f-topic')?.value.trim();
+      const product = document.getElementById('f-product')?.value.trim();
+      const market = document.getElementById('f-market')?.value.trim() || MARKET.name;
+      const platforms = document.getElementById('f-platforms')?.value.trim();
+      const durationSec = +document.getElementById('f-duration')?.value || 24;
+      const scenesCount = +document.getElementById('f-scenes')?.value || 4;
+      const renderMode = document.getElementById('f-render-mode')?.value || 'live';
+      const voiceId = document.getElementById('f-voice-id')?.value.trim() || undefined;
+
       if (!topic) { notify('Введи тему відео', 'r'); return; }
-      const persona = document.getElementById('f-persona')?.value || 'renter';
-      const hookType = document.getElementById('f-hook')?.value || 'auto';
-      const city = document.getElementById('f-city')?.value || 'Sydney';
-      const product = document.getElementById('f-product')?.value || '';
-      const slang = document.getElementById('f-slang')?.value || 'medium';
+      if (!product) { notify('Введи продукт', 'r'); return; }
 
-      resetPipe(); setPN(1, 'done'); setPN(2, 'active');
-      ld('factory', true, 'Генерую скрипт...');
+      ld('factory', true, 'Запускаю фабрику...');
+      renderFactoryResult(null);
 
-      // Check if we should use Champion DNA
-      const champions = DB.champions();
-      const mktFactCtx = `Ринок: ${MARKET.name}. Currency: ${MARKET.currency}. Amazon domain: ${MARKET.amazonDomain}. Affiliate tag: ${MARKET.tag}. Local cities: ${MARKET.cityEn.join(', ')}. Slang style: ${MARKET.slangExamples}.`;
-      const championHint = champions.length ? `Champion DNA available: frozen genes = ${JSON.stringify(champions[0]?.genes || {})}. Align with champion where possible.` : 'No champions yet.';
+      try {
+        const resp = await fetch('/api/factory/run', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            topic,
+            product,
+            market,
+            platforms,
+            durationSec,
+            advanced: {
+              scenesCount,
+              renderMode,
+              voiceId
+            }
+          })
+        });
 
-      const r = await ai(
-        `AU Content Factory. Генерувати viral TikTok script. ${champions.length ? 'USE Champion DNA for frozen genes (hook/persona/emotion).' : ''}
-Schema:{"hook_ua":string,"hook_type":string,"problem_ua":string,"native_ad_ua":string,"solution_ua":string,"cta_ua":string,"caption_en":string,"hashtags":string[],"pacing":{"hook_s":number,"problem_s":number,"ad_s":number,"solution_s":number,"cta_s":number},"profit_score":number,"predicted_ctr":string,"genes":{"hook":string,"persona":string,"emotion":string,"pain":string,"product":string,"cta":string,"visual":string,"curiosity":string},"champion_alignment":number,"shadowban_warnings":string[],"affiliate_url":string}
-Champion alignment = how closely genes match existing champion (0-100). AU slang: ${slang}. Shadowban guard active.`,
-        `Topic:"${topic}". Persona:${persona}. Hook:${hookType}. City:${city}. Product:"${product || 'best AU option'}". ${championHint}`,
-        { hook_ua: `${city}! ${topic} — ось що ти не знаєш`, hook_type: hookType === 'auto' ? 'curiosity_gap' : hookType, problem_ua: 'Більшість орендарів у AU не знають про це поки проблема вже серйозна', native_ad_ua: `${product || 'Raid Max AU$18'} — перевірений особисто в ${city}`, solution_ua: 'Одна дія 5 хвилин = проблема вирішена на 3+ місяці', cta_ua: `Посилання в bio → ${MARKET.amazonDomain} ?tag=${MARKET.tag}`, caption_en: `${topic} ${city}. Amazon AU link in bio.`, hashtags: ['#pestcontrol', '#australia', '#' + city.toLowerCase()], pacing: { hook_s: 3, problem_s: 4, ad_s: 2, solution_s: 5, cta_s: 2 }, profit_score: 88, predicted_ctr: '9-13%', genes: { hook: 'curiosity_gap', persona, emotion: 'curiosity', pain: 'cost', product: 'cheapest', cta: 'bio_link', visual: 'pov_shot', curiosity: 'hidden_trick' }, champion_alignment: champions.length ? 72 : 0, shadowban_warnings: [], affiliate_url: mktUrl('B08EXAMPLE') }
-      );
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data?.details?.join(', ') || data?.error || ('status ' + resp.status));
 
-      setPN(2, 'done'); setPN(3, 'done'); setPN(4, 'done'); setPN(5, 'done');
+        FACTORY_AUTO.currentJobId = data.id;
+        localStorage.setItem('cos10_factory_last_job', data.id);
+        renderFactoryStatus(data);
+        startFactoryPolling(data.id);
+        await refreshFactoryJobs(true);
+        notify('🏭 Factory job запущено', 'g');
+      } catch (e) {
+        ld('factory', false);
+        notify('Запуск фабрики не вдався: ' + e.message, 'r');
+      }
+    }
 
-      // Champion check
-      const alignment = r.champion_alignment || 0;
-      const isChampionVariation = alignment >= 70 && champions.length > 0;
-      setPN(6, isChampionVariation ? 'done' : 'active');
-      await delay(200);
-      if (!isChampionVariation) setPN(6, 'done');
+    function startFactoryPolling(jobId) {
+      stopFactoryPolling();
+      FACTORY_AUTO.pollTimer = setInterval(() => refreshFactoryJob(jobId, true), 2000);
+    }
 
-      // Auto-save genome
-      const genome = { id: uid(), title: topic, platform: document.getElementById('f-platform')?.value || 'TikTok', niche: 'pest_au', genes: r.genes || {}, synergy_score: r.profit_score || 75, is_champion: false, champion_variations: 0, metrics: { views: 0, ctr: 0, retention: 0, revenue: 0 }, summary_ua: 'Авто-тег з Фабрики.', predicted_ctr: r.predicted_ctr || '', created_at: now() };
-      DB.push('genomes', genome);
-      ld('factory', false); updateStats();
+    function stopFactoryPolling() {
+      if (FACTORY_AUTO.pollTimer) clearInterval(FACTORY_AUTO.pollTimer);
+      FACTORY_AUTO.pollTimer = null;
+    }
 
-      const total = (r.pacing?.hook_s || 3) + (r.pacing?.problem_s || 4) + (r.pacing?.ad_s || 2) + (r.pacing?.solution_s || 5) + (r.pacing?.cta_s || 2);
-      const fullScript = `${r.hook_ua}\n\n${r.problem_ua}\n\n${r.native_ad_ua}\n\n${r.solution_ua}\n\n${r.cta_ua}`;
+    async function refreshFactoryJob(jobId, silent = false) {
+      try {
+        const resp = await fetch('/api/factory/jobs/' + jobId);
+        if (!resp.ok) {
+          if (resp.status === 404) {
+            stopFactoryPolling();
+            FACTORY_AUTO.currentJobId = '';
+            localStorage.removeItem('cos10_factory_last_job');
+          }
+          throw new Error('status ' + resp.status);
+        }
+        const job = await resp.json();
+        if (jobId === FACTORY_AUTO.currentJobId) {
+          renderFactoryStatus(job);
+          if (isFactoryTerminalStatus(job.status)) {
+            stopFactoryPolling();
+            renderFactoryResult(job);
+            ld('factory', false);
+            await refreshFactoryJobs(true);
+          }
+        }
+        return job;
+      } catch (e) {
+        if (!silent) notify('Не вдалося оновити статус: ' + e.message, 'r');
+      }
+    }
 
-      showR('factory', `
-  <div class="card" style="border-left:2px solid var(--amber)">
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:12px">
-      <div style="flex:1">
-        <div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap;margin-bottom:5px">
-          ${gt('hook', r.hook_type)}
-          <span style="font-family:var(--m);font-size:9px;color:var(--t3)">⏱ ${total}s</span>
-          <span style="font-family:var(--m);font-size:9px;color:var(--green)">${r.predicted_ctr}</span>
-          ${isChampionVariation ? `<span class="badge" style="background:var(--amber-bg);border-color:var(--amber-bd);color:var(--amber)">🏆 Champion Variation (${alignment}%)</span>` : '<span class="badge bf">Новий кандидат</span>'}
+    async function refreshFactoryJobs(silent = false) {
+      try {
+        const resp = await fetch('/api/factory/jobs?limit=10');
+        if (!resp.ok) throw new Error('status ' + resp.status);
+        const data = await resp.json();
+        renderFactoryJobList(data.jobs || []);
+      } catch (e) {
+        if (!silent) notify('Не вдалося завантажити історію: ' + e.message, 'r');
+      }
+    }
+    async function retryFactoryJob(jobId) {
+      try {
+        const resp = await fetch('/api/factory/jobs/' + jobId + '/retry', { method: 'POST' });
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data?.details?.join(', ') || data?.error || ('status ' + resp.status));
+        FACTORY_AUTO.currentJobId = data.id;
+        localStorage.setItem('cos10_factory_last_job', data.id);
+        renderFactoryStatus(data);
+        renderFactoryResult(null);
+        startFactoryPolling(data.id);
+        await refreshFactoryJobs(true);
+        notify('♻️ Factory job перезапущено', 'g');
+      } catch (e) {
+        notify('Retry failed: ' + e.message, 'r');
+      }
+    }
+
+    function renderFactoryStatus(job) {
+      if (!job) return;
+      const statusMeta = getFactoryStatusMeta(job.status || 'queued');
+      const container = document.getElementById('f-status-container');
+      if (!container) return;
+
+      container.innerHTML = `
+        <div style="background:var(--bg);padding:12px 14px;border-radius:10px;border:1px solid var(--b1);margin-bottom:14px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+            <div style="display:flex;align-items:center;gap:10px">
+              <div style="width:36px;height:36px;border-radius:50%;background:color-mix(in srgb, ${getFactoryToneColor(statusMeta.tone)} 15%, transparent);display:flex;align-items:center;justify-content:center;font-size:16px">
+                ${isFactoryActiveStatus(job.status) ? '<div class="spin"></div>' : (job.status === 'completed' ? '✅' : (job.status === 'failed' ? '❌' : '⏹'))}
+              </div>
+              <div>
+                <div style="font-size:11px;font-family:var(--m);color:var(--t4);text-transform:uppercase;letter-spacing:0.05em">Статус</div>
+                <div style="font-size:14px;font-weight:700;color:${getFactoryToneColor(statusMeta.tone)}">${statusMeta.label}</div>
+              </div>
+            </div>
+            <div style="text-align:right">
+              <div style="font-size:11px;font-family:var(--m);color:var(--t4);text-transform:uppercase;letter-spacing:0.05em">ID</div>
+              <div style="font-size:14px;font-family:var(--m);color:var(--t2)">${job.id}</div>
+            </div>
+          </div>
+          
+          <div style="display:flex;gap:4px;margin-bottom:14px;height:6px;background:var(--s2);border-radius:3px;overflow:hidden">
+            ${(FACTORY_AUTO.meta.steps || []).map(step => {
+              const state = job.progress?.steps?.[step.key]?.state || 'idle';
+              const stateMeta = getFactoryStepStateMeta(state);
+              return `<div style="flex:1;background:${getFactoryToneColor(stateMeta.tone)};opacity:${state === 'active' ? 1 : (state === 'done' ? 0.8 : 0.2)}"></div>`;
+            }).join('')}
+          </div>
+
+          <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(80px, 1fr));gap:6px">
+            ${(FACTORY_AUTO.meta.steps || []).map(step => {
+              const stepData = job.progress?.steps?.[step.key];
+              const state = stepData?.state || 'idle';
+              const stateMeta = getFactoryStepStateMeta(state);
+              return `
+                <div style="padding:6px;border-radius:6px;background:var(--s2);text-align:center;border:1px solid ${state === 'active' ? getFactoryToneColor(stateMeta.tone) : 'transparent'}">
+                  <div style="font-size:8px;font-family:var(--m);color:var(--t4);text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${step.label}</div>
+                  <div style="font-size:9px;color:${getFactoryToneColor(stateMeta.tone)};font-weight:700">${stateMeta.label}</div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+
+          ${isFactoryActiveStatus(job.status) ? `
+          <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--b1);display:flex;justify-content:center">
+            <button class="btn br bsm" onclick="cancelFactoryJob('${job.id}')">Зупинити процес</button>
+          </div>
+          ` : ''}
+
+          ${canRetryFactoryJob(job.status) ? `
+          <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--b1);display:flex;justify-content:center;gap:10px">
+            <button class="btn ba bsm" onclick="retryFactoryJob('${job.id}')">Перезапустити</button>
+            <button class="btn bx bsm" onclick="runFactory()">Створити нове</button>
+          </div>
+          ` : ''}
         </div>
-        <div style="font-size:15px;font-weight:800">${topic}</div>
-      </div>
-      <div style="display:flex;gap:7px;align-items:center">
-        ${CB(fullScript, 'fac_full')}
-        <div class="sr"><div class="sr-v" style="color:var(--amber)">${r.profit_score || 88}</div><div class="sr-l">Score</div></div>
-      </div>
-    </div>
-    <!-- PACING -->
-    <div style="display:flex;gap:3px;height:20px;border-radius:5px;overflow:hidden;margin-bottom:12px">
-      ${[['ЗАЧ', r.pacing?.hook_s, 'var(--g-hook)'], ['ПРО', r.pacing?.problem_s, 'var(--g-pain)'], ['РЕК', r.pacing?.ad_s, 'var(--amber)'], ['РІШ', r.pacing?.solution_s, 'var(--g-product)'], ['ЗАК', r.pacing?.cta_s, 'var(--g-cta)']].map(([l, t, c]) => `<div style="flex:${t || 1};background:color-mix(in srgb,${c} 15%,transparent);border:1px solid color-mix(in srgb,${c} 35%,transparent);display:flex;align-items:center;justify-content:center;font-family:var(--m);font-size:7px;color:${c};gap:2px"><span>${l}</span><span>${t}s</span></div>`).join('')}
-    </div>
-    <!-- BLOCKS -->
-    <div class="g3" style="gap:7px;margin-bottom:8px">
-      ${[['🎣 ЗАЧІПКА', r.hook_ua, 'var(--g-hook)'], ['😰 ПРОБЛЕМА', r.problem_ua, 'var(--g-pain)'], ['💰 НАТИВНА РЕКЛАМА', r.native_ad_ua, 'var(--amber)']].map(([l, t, c]) => `<div style="background:var(--bg);border-radius:7px;padding:9px;border:1px solid var(--b1)"><div style="font-family:var(--m);font-size:7px;color:${c};font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px">${l}</div><div style="font-size:12px;line-height:1.6">${t || '—'}</div></div>`).join('')}
-    </div>
-    <div class="g2" style="gap:7px;margin-bottom:10px">
-      ${[['✅ РІШЕННЯ', r.solution_ua, 'var(--g-product)'], ['📲 ЗАКЛИК ДО ДІЇ', r.cta_ua, 'var(--g-cta)']].map(([l, t, c]) => `<div style="background:var(--bg);border-radius:7px;padding:9px;border:1px solid var(--b1)"><div style="font-family:var(--m);font-size:7px;color:${c};font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px">${l}</div><div style="font-size:12px;line-height:1.6">${t || '—'}</div></div>`).join('')}
-    </div>
-    <div style="display:flex;flex-wrap:wrap;gap:3px;margin-bottom:6px">${allGT(r.genes || {})}</div>
-    ${isChampionVariation ? `<div style="padding:7px 10px;background:var(--amber-bg);border:1px solid var(--amber-bd);border-radius:6px;font-family:var(--m);font-size:9px;color:var(--amber)">🏆 Variation around champion · Frozen genes preserved · ${100 - alignment}% mutation space used</div>` : ''}
-  </div>`);
-      notify(isChampionVariation ? '✅ Варіація Чемпіона згенерована' : '✅ Новий кандидат згенерований', 'g');
+      `;
+    }
+
+    function renderFactoryResult(job) {
+      const container = document.getElementById('r-factory');
+      if (!container) return;
+      if (!job || job.status !== 'completed') {
+        container.innerHTML = '';
+        return;
+      }
+
+      const script = job.result?.script;
+      const scenes = job.result?.scenes || [];
+      const packageUrl = `/api/factory/jobs/${job.id}/package.txt`;
+
+      container.innerHTML = `
+        <div class="card" style="border-left:2px solid var(--green)">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+            <div>
+              <div style="font-size:11px;font-family:var(--m);color:var(--t4);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">Готовий результат</div>
+              <h3 style="font-size:18px;font-weight:800">${job.payload?.topic}</h3>
+            </div>
+            <a href="${packageUrl}" download="publish_package_${job.id}.txt" class="btn bg bsm">📦 Пакет для публікації</a>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr;gap:14px">
+            <div style="background:var(--s2);padding:14px;border-radius:10px;border:1px solid var(--b1)">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                <div style="font-size:10px;font-family:var(--m);color:var(--amber);font-weight:700">📜 СКРИПТ (СІДНЕЙ)</div>
+                ${CB(script?.full_ua, 'script-full')}
+              </div>
+              <div style="font-size:13px;line-height:1.7;white-space:pre-wrap;color:var(--t2)">${script?.full_ua}</div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:10px">
+              ${scenes.map((s, idx) => `
+                <div style="background:var(--bg);padding:10px;border-radius:8px;border:1px solid var(--b1)">
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+                    <span style="font-size:9px;font-weight:800;color:var(--blue)">SCENE ${idx+1} · ${s.duration_s}s</span>
+                    ${s.voice_url ? `<a href="${s.voice_url}" target="_blank" style="font-size:14px" title="Play Voice">🎙</a>` : ''}
+                  </div>
+                  <div style="font-size:11px;color:var(--t1);margin-bottom:6px">${s.text_ua}</div>
+                  <div style="display:flex;justify-content:space-between;align-items:center">
+                    <div style="font-size:8px;font-family:var(--m);color:var(--t4);font-style:italic">Keyword: ${s.search_keyword}</div>
+                    ${s.clips?.[0]?.video_url ? `<a href="${s.clips[0].video_url}" target="_blank" style="font-size:14px" title="Preview Clip">🎞</a>` : ''}
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+          
+          <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--b1);display:flex;justify-content:space-between;align-items:center">
+            <div style="font-size:10px;color:var(--t4);font-family:var(--m)">
+              ${job.result?.summary || 'Контент успішно згенерований та готовий до монтажу.'}
+            </div>
+            <button class="btn bx bsm" onclick="runFactory()">Створити ще один</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderFactoryJobList(jobs) {
+      const container = document.getElementById('f-jobs-history');
+      if (!container) return;
+
+      if (!jobs || jobs.length === 0) {
+        container.innerHTML = '<div style="font-size:9px;color:var(--t4);text-align:center;padding:10px">Немає активних або недавніх запусків</div>';
+        return;
+      }
+
+      container.innerHTML = jobs.map(j => {
+        const meta = getFactoryStatusMeta(j.status);
+        const isActive = isFactoryActiveStatus(j.status);
+        return `
+          <div onclick="refreshFactoryJob('${j.id}')" style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:var(--bg);border:1px solid var(--b1);border-radius:8px;cursor:pointer;margin-bottom:6px;transition:0.1s hover">
+            <div style="flex:1;overflow:hidden">
+              <div style="font-size:11px;font-weight:700;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${j.payload?.topic}</div>
+              <div style="font-size:8px;font-family:var(--m);color:var(--t4)">${new Date(j.created_at).toLocaleTimeString()} · ${j.id.slice(0, 8)}</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px">
+              ${isActive ? '<div class="spin" style="width:8px;height:8px;border-width:1px"></div>' : ''}
+              <div style="font-size:9px;font-weight:700;color:${getFactoryToneColor(meta.tone)}">${meta.label}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
     }
 
     /* ═══════════════════════════════════════

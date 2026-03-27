@@ -1,0 +1,980 @@
+<!-- LOGIN SCREEN -->
+  <div id="login-screen" style="display: none;">
+    <div class="auth-card">
+      <div style="text-align: center; margin-bottom: 24px;">
+        <div class="logo-mark" style="margin: 0 auto 12px; width: 48px; height: 48px; font-size: 16px;">C10</div>
+        <h2 style="font-size: 20px; font-weight: 800; color: var(--t1);">Creator OS v10</h2>
+        <p style="font-family: var(--m); font-size: 10px; color: var(--t3); margin-top: 4px; text-transform: uppercase;">Система управління контентом</p>
+      </div>
+      
+      <div style="margin-bottom: 16px;">
+        <label style="font-family: var(--m); font-size: 9px; color: var(--t4); text-transform: uppercase; display: block; margin-bottom: 6px;">Email</label>
+        <input type="email" id="auth-email" placeholder="email@example.com" style="width: 100%; background: var(--bg); border: 1px solid var(--b1); border-radius: 8px; padding: 12px; color: var(--t1); font-family: var(--m); outline: none;">
+      </div>
+      
+      <div style="margin-bottom: 24px;">
+        <label style="font-family: var(--m); font-size: 9px; color: var(--t4); text-transform: uppercase; display: block; margin-bottom: 6px;">Пароль</label>
+        <input type="password" id="auth-password" placeholder="••••••••" style="width: 100%; background: var(--bg); border: 1px solid var(--b1); border-radius: 8px; padding: 12px; color: var(--t1); font-family: var(--m); outline: none;">
+      </div>
+      
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <button onclick="handleAuth('login')" style="background: var(--amber); color: #000; border: none; border-radius: 8px; padding: 12px; font-weight: 700; cursor: pointer; font-family: var(--f);">Увійти</button>
+        <button onclick="handleAuth('signup')" style="background: var(--s2); color: var(--t1); border: 1px solid var(--b1); border-radius: 8px; padding: 12px; font-weight: 600; cursor: pointer; font-family: var(--f);">Реєстрація</button>
+      </div>
+      
+      <div style="margin-top: 24px; text-align: center; border-top: 1px solid var(--b1); padding-top: 20px;">
+        <p style="font-family: var(--m); font-size: 8px; color: var(--t4);">v10.0.0 · SECURE PROXY ACTIVE</p>
+        <p style="font-family: var(--m); font-size: 8px; color: var(--t4);">v1.0.3 · LIVE ON RENDER</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN APP CONTAINER (Initially hidden until auth) -->
+  <div class="shell" id="app-shell" style="display: none;">
+  <div id="winner-alert" class="winner-alert" onclick="this.classList.remove('on')"></div>
+  <div id="notif"></div>
+
+    <!-- ═══════════ SIDEBAR ═══════════ -->
+    <nav class="nav">
+      <div class="nav-logo">
+        <div class="logo-mark">КОС</div>
+        <div>
+          <div class="logo-name">Creator OS v10</div>
+          <div class="logo-sub">v10 · Archetype + Вірусна Наука</div>
+        </div>
+      </div>
+
+      <div class="nav-sec">Конвеєр</div>
+      <div class="ni on" id="ni-signal" onclick="go('signal',this)">
+      <div class="ni" id="ni-signal" onclick="go('signal',this)">
+        <span class="ni-icon">📡</span><span class="ni-label">Радар Сигналів</span>
+        <span class="ni-fix">ВИПРАВ 3</span>
+      </div>
+      <div class="ni" id="ni-factory" onclick="go('factory',this)">
+      <div class="ni on" id="ni-factory" onclick="go('factory',this)">
+        <span class="ni-icon">🏭</span><span class="ni-label">Фабрика Контенту</span>
+      </div>
+      <div class="ni" id="ni-genome" onclick="go('genome',this)">
+        <span class="ni-icon">🧬</span><span class="ni-label">Теггер Геному</span>
+      </div>
+
+      <div class="nav-sec">Шар Даних</div>
+      <div class="ni" id="ni-pipeline" onclick="go('pipeline',this)">
+        <span class="ni-icon">🔄</span><span class="ni-label">Конвеєр Даних</span>
+        <span class="ni-fix">ВИПРАВ 1</span>
+      </div>
+      <div class="ni" id="ni-champion" onclick="go('champion',this)">
+        <span class="ni-icon">🏆</span><span class="ni-label">Блокування Чемпіона</span>
+        <span class="ni-fix">ВИПРАВ 2</span>
+      </div>
+
+      <div class="ni" id="ni-videofactory" onclick="go('videofactory',this)">
+        <span class="ni-icon">🎬</span><span class="ni-label">Video Factory</span>
+        <span class="ni-new"
+          style="background:var(--violet)22;color:var(--violet);border:1px solid var(--violet)44;font-family:var(--m);font-size:7px;padding:1px 5px;border-radius:3px">v4</span>
+      </div>
+      <div class="ni" id="ni-publish" onclick="go('publish',this)">
+        <span class="ni-icon">📦</span><span class="ni-label">Пакет Публікації</span>
+        <span class="ni-new"
+          style="background:var(--green-bg);color:var(--green);border:1px solid var(--green-bd)">NEW</span>
+@@ -4280,51 +4280,51 @@
+          <button class="mkt-btn" id="mb-us" onclick="setMarket('US')"><span class="mkt-flag">🇺🇸</span>USA</button>
+          <button class="mkt-btn" id="mb-uk" onclick="setMarket('UK')"><span class="mkt-flag">🇬🇧</span>UK</button>
+          <button class="mkt-btn" id="mb-ca" onclick="setMarket('CA')"><span class="mkt-flag">🇨🇦</span>CA</button>
+        </div>
+        <div class="tb-div"></div>
+        <div
+          style="display:flex;align-items:center;gap:5px;padding:2px 5px;background:var(--bg);border:1px solid var(--b1);border-radius:7px">
+          <span style="font-family:var(--m);font-size:8px;color:var(--t4)">НІША:</span>
+          <div class="niche-bar" id="niche-bar" style="padding:0;gap:4px"></div>
+        </div>
+        <div class="tb-div"></div>
+        <div class="tb-div"></div>
+        <button id="doc-topbar-btn" class="doc-topbar-btn doc-ok"
+          onclick="go('doctor',document.getElementById('ni-doctor'))" title="System Doctor">
+          <span id="doc-topbar-icon">🩺</span>
+          <span id="doc-topbar-text">Система OK</span>
+        </button>
+        <div class="live"></div>
+      </div>
+
+      <div class="panel">
+
+        <!-- ═══════════════════════════════════════
+       FIX 3 — SIGNAL RADAR + REALITY SCORE
+  ═══════════════════════════════════════ -->
+        <div id="p-signal" class="pane on">
+        <div id="p-signal" class="pane">
+          <div class="ph">
+            <div class="ph-row">
+              <div>
+                <div class="ph-title">Радар <em>Сигналів</em></div>
+                <div class="ph-sub">// ВИПРАВЛЕННЯ №3 — ОЦІНКА РЕАЛЬНОСТІ СИГНАЛІВ · РЕАЛЬНЕ ЧИ ВИГАДАНЕ · ЗАХИСТ ВІД
+                  ПОМИЛКОВОЇ ВПЕВНЕНОСТІ</div>
+              </div>
+              <div class="row">
+                <button class="btn bx bsm" onclick="sigDemo()">Демо</button>
+                <button class="btn ba" onclick="runSignals()">📡 Запустити Радар</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- FIX 3 BANNER -->
+          <div class="fix-banner f3">
+            <div class="fix-badge" style="background:var(--amber-bg);border-color:var(--amber-bd);color:var(--amber)">
+              ВИПРАВЛЕННЯ №3</div>
+            <div class="fix-content">
+              <div class="fix-title" style="color:var(--amber)">Оцінка реальності — захист від «ілюзії сигналів»</div>
+              <div class="fix-desc">Кожен сигнал отримує оцінку достовірності: REAL (реальне джерело) / SYNTHETIC
+                (AI-генерований). <br />Сигнали нижче 40% Оцінки Реальності позначаються як ⚠️ НЕ ПЕРЕВІРЕНО — Двигун
+                Еволюції їх ігнорує.</div>
+            </div>
+          </div>
+@@ -4375,136 +4375,137 @@
+                  <option>Вся Австралія</option>
+                  <option>Сідней (NSW)</option>
+                  <option>Брісбен (QLD)</option>
+                  <option>Мельбурн (VIC)</option>
+                  <option>Перт (WA)</option>
+                </select>
+              </div>
+              <div class="row" style="gap:6px">
+                <div class="badge" style="background:var(--amber-bg);border-color:var(--amber-bd);color:var(--amber)">⚠️
+                  AI ДОПОВНЕНИЙ</div>
+                <span style="font-family:var(--m);font-size:8px;color:var(--t3)">Оцінка реальності: 30–60%</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="ld" id="ld-signal">
+            <div class="spin"></div>
+            <div class="ld-t" id="ld-signal-t">Analyzing signals with Reality Scoring...</div>
+          </div>
+          <div class="res" id="r-signal"></div>
+        </div>
+
+        <!-- ═══════════════════════════════════════
+       CONTENT FACTORY
+  ═══════════════════════════════════════ -->
+        <div id="p-factory" class="pane">
+        <div id="p-factory" class="pane on">
+          <div class="ph">
+            <div class="ph-row">
+              <div>
+                <div class="ph-title">Фабрика <em>Контенту</em></div>
+                <div class="ph-sub">// ІДЕЯ → ЗАЧІПКА → ГЕНОМ → СКРИПТ → ПЕРЕВІРКА ЧЕМПІОНА</div>
+                <div class="ph-title">Factory <em>Mode</em></div>
+                <div class="ph-sub">// ONE-CLICK FACTORY · ТЕМА → СКРИПТ → VOICE → КЛІПИ → РЕНДЕР → ГОТОВО ДО ПУБЛІКАЦІЇ</div>
+                <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">
+                  <span style="padding:4px 8px;border-radius:999px;background:rgba(91,140,255,.12);border:1px solid rgba(91,140,255,.3);font-family:var(--m);font-size:8px;color:var(--blue)">ОНОВЛЕНО В UI</span>
+                  <span style="padding:4px 8px;border-radius:999px;background:rgba(26,200,122,.12);border:1px solid rgba(26,200,122,.25);font-family:var(--m);font-size:8px;color:var(--green)">Factory v1.0.3</span>
+                </div>
+              </div>
+              <div class="row">
+                <button class="btn bb bsm" id="factory-mobile-toggle" onclick="toggleFactoryMobileMode()">📱 Мобільний режим: Вимк.</button>
+                <button class="btn bx bsm" onclick="factoryDemo()">Демо</button>
+                <button class="btn ba" id="factory-run-btn" onclick="runFactory()">🏭 Запустити фабрику</button>
+              </div>
+              <button class="btn ba" onclick="runFactory()">🏭 Генерувати</button>
+            </div>
+          </div>
+          <div class="g2" style="gap:12px">
+          <div class="g2" style="gap:12px;align-items:start">
+            <div>
+              <div class="card">
+                <div class="sl">Input</div>
+                <div class="field"><label class="fl">Тема</label><input id="f-topic"
+                    placeholder="spider season Sydney renters 2026" /></div>
+                <div class="g2" style="gap:8px">
+                  <div class="field"><label class="fl">Тип глядача</label>
+                    <select id="f-persona">
+                      <option value="renter">🏠 Орендар</option>
+                      <option value="homeowner">🏡 Власник будинку</option>
+                      <option value="parent">👨‍👩‍👧 Батьки з дітьми</option>
+                      <option value="diy">🔧 Зроби сам</option>
+                      <option value="pet_owner">🐾 Власник тварин</option>
+                    </select>
+                  </div>
+                  <div class="field"><label class="fl">Тип зачіпки</label>
+                    <select id="f-hook">
+                      <option value="auto">Авто (AI обирає)</option>
+                      <option value="curiosity_gap">Інтрига (що приховують)</option>
+                      <option value="authority_leak">Викриття експерта</option>
+                      <option value="stats_shock">Шокуюча статистика</option>
+                      <option value="fear_trigger">Тригер страху</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="sl">Швидкий запуск</div>
+                <div class="field"><label class="fl">Тема / Signal</label><input id="f-topic"
+                    placeholder="cockroach control London renters" /></div>
+                <div class="g2" style="gap:8px">
+                  <div class="field"><label class="fl">City</label><input id="f-city" value="Sydney" /></div>
+                  <div class="field"><label class="fl">Product</label><input id="f-product"
+                      placeholder="Raid Max AU$18.99" /></div>
+                      placeholder="gel bait" /></div>
+                  <div class="field"><label class="fl">Market</label><input id="f-market" value="UK" /></div>
+                </div>
+                <div class="g2" style="gap:8px">
+                  <div class="field"><label class="fl">Австралійський сленг</label><select id="f-slang">
+                      <option value="light">Легкий</option>
+                      <option value="medium" selected>Середній</option>
+                      <option value="heavy">Важкий</option>
+                    </select></div>
+                  <div class="field"><label class="fl">Платформа</label><select id="f-platform">
+                      <option>TikTok</option>
+                      <option>Instagram Reels</option>
+                      <option>YouTube Shorts</option>
+                    </select></div>
+                  <div class="field"><label class="fl">Платформи</label><input id="f-platforms"
+                      value="TikTok,YouTube Shorts" /></div>
+                  <div class="field"><label class="fl">Duration</label><input id="f-duration" type="number" value="24" /></div>
+                </div>
+                <details style="margin-top:8px">
+                  <summary style="cursor:pointer;font-family:var(--m);font-size:9px;color:var(--amber);text-transform:uppercase;letter-spacing:.08em">Розширені налаштування</summary>
+                  <div class="g2" style="gap:8px;margin-top:10px">
+                    <div class="field"><label class="fl">Archetype</label><input id="f-archetype" placeholder="problem-solution" /></div>
+                    <div class="field"><label class="fl">Scenes count</label><input id="f-scenes" type="number" value="4" /></div>
+                    <div class="field"><label class="fl">Voice ID</label><input id="f-voice-id" placeholder="стандартний голос" /></div>
+                    <div class="field"><label class="fl">Render mode</label>
+                      <select id="f-render-mode">
+                        <option value="live" selected>Живий рендер</option>
+                        <option value="dry">Сухий прогін</option>
+                      </select>
+                    </div>
+                  </div>
+                </details>
+              </div>
+              <div class="card" style="margin-top:10px">
+                <div class="sl">Готовність фабрики</div>
+                <div id="factory-services" style="display:flex;flex-wrap:wrap;gap:6px">
+                  <span style="font-family:var(--m);font-size:8px;color:var(--t4)">Перевіряю сервіси...</span>
+                </div>
+              </div>
+            </div>
+            <div>
+              <div class="card card-a" style="margin-bottom:10px">
+                <div class="sl" style="border-color:var(--amber-bd)">Конвеєр</div>
+                <div class="pipe">
+                  <div class="pn" id="pp1">Idea</div>
+                  <div class="pa">→</div>
+                  <div class="pn" id="pp2">Hook</div>
+                  <div class="pa">→</div>
+                  <div class="pn" id="pp3">Genome</div>
+                  <div class="pa">→</div>
+                  <div class="pn" id="pp4">Script</div>
+                  <div class="pa">→</div>
+                  <div class="pn" id="pp5">Guard</div>
+                  <div class="pa">→</div>
+                  <div class="pn" id="pp6">Champion?</div>
+                <div class="sl" style="border-color:var(--amber-bd)">Статус фабрики</div>
+                <div id="factory-status" style="display:flex;flex-direction:column;gap:8px">
+                  <div style="font-family:var(--m);font-size:9px;color:var(--t3)">Ще не запускали. Натисни “Запустити фабрику”.</div>
+                </div>
+              </div>
+              <div class="card card-dark">
+                <div class="sl">Перевірка Чемпіона (Виправлення №2)</div>
+                <div style="font-family:var(--m);font-size:9px;color:var(--t3);line-height:1.8">
+                  Після генерації скрипт перевіряється проти Champion Library.<br />
+                  Якщо genes збігаються з Champion ≥70% → <span style="color:var(--amber)">варіація навколо
+                    Champion</span>.<br />
+                  Якщо genes нові → <span style="color:var(--blue)">новий candidate</span>.
+              <div class="card card-dark factory-desktop-only" id="factory-desktop-card">
+                <div class="sl">Що робить фабрика</div>
+                <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;font-family:var(--m);font-size:9px;color:var(--t3);line-height:1.7">
+                  <div>1. Генерація скрипта</div>
+                  <div>2. Генерація voice</div>
+                  <div>3. Пошук кліпів</div>
+                  <div>4. План рендера</div>
+                  <div>5. Рендер відео</div>
+                  <div>6. Publish package</div>
+                  <div>7. Збереження job</div>
+                  <div>8. Ready to publish</div>
+                </div>
+              </div>
+              <div class="card" style="margin-top:10px">
+                <div class="sl">Останні factory jobs</div>
+                <div id="factory-history" style="display:flex;flex-direction:column;gap:8px">
+                  <div style="font-family:var(--m);font-size:9px;color:var(--t3)">Історія job з’явиться тут.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="ld" id="ld-factory">
+            <div class="spin"></div>
+            <div class="ld-t" id="ld-factory-t">Generating...</div>
+            <div class="ld-t" id="ld-factory-t">Запускаю фабрику...</div>
+          </div>
+          <div class="res" id="r-factory"></div>
+        </div>
+
+        <!-- ═══════════════════════════════════════
+       GENOME TAGGER
+  ═══════════════════════════════════════ -->
+        <div id="p-genome" class="pane">
+          <div class="ph">
+            <div class="ph-row">
+              <div>
+                <div class="ph-title">Genome <em>Tagger</em></div>
+                <div class="ph-sub">// ТЕГУВАТИ · ОЦІНИТИ · ЗАБЛОКУВАТИ ЯК ЧЕМПІОНА · 8 ГЕНІВ ДНК</div>
+              </div>
+              <div class="row">
+                <button class="btn bx bsm" onclick="genomeDemo()">Демо</button>
+                <button class="btn ba" onclick="runGenomeTagger()">🧬 Визначити ДНК</button>
+              </div>
+            </div>
+          </div>
+          <div class="g2" style="gap:12px">
+            <div class="card">
+              <div class="sl">Content</div>
+              <div class="field"><label class="fl">Назва</label><input id="g-title"
+                  placeholder="Renters in AU using this $12 trick..." /></div>
+@@ -7365,50 +7366,51 @@
+      if (!el) return;
+      if (errs > 0) { el.textContent = errs; el.style.background = 'var(--red)'; el.style.display = 'inline-block'; }
+      else if (warns > 0) { el.textContent = warns; el.style.background = 'var(--amber)'; el.style.display = 'inline-block'; }
+      else { el.style.display = 'none'; }
+    }
+    function setPN(n, s) { const el = document.getElementById('pp' + n); if (!el) return; el.className = 'pn' + (s === 'done' ? ' done' : s === 'active' ? ' active' : '') }
+    function resetPipe() { for (let i = 1; i <= 6; i++)setPN(i, '') }
+
+
+    /* ── NAV ── */
+    const PANES = ['signal', 'factory', 'genome', 'pipeline', 'champion', 'evolution', 'matrix', 'publish', 'hooklab', 'monopoly', 'cloud', 'videofactory', 'heygen', 'saas', 'doctor', 'audience', 'gaphunter', 'amplifier', 'timing', 'portfolio', 'nichediscovery', 'launcher', 'viralpattern', 'variation', 'launch', 'audienceasset', 'humanreview', 'bizmodel', 'winnerscaling', 'archetype'];
+    const CRUMBS = { signal: 'Радар Сигналів', factory: 'Фабрика Контенту', genome: 'Теггер Геному', pipeline: 'Конвеєр Даних', champion: 'Блокування Чемпіона', evolution: 'Двигун Еволюції', matrix: 'Матриця Генів', publish: 'Пакет Публікації', hooklab: 'Hook Lab', monopoly: 'Topic Monopoly', cloud: 'Cloud Sync', videofactory: 'Video Factory', heygen: 'HeyGen AI Video', saas: 'SaaS Dashboard', doctor: 'System Doctor', audience: 'Audience Intel', gaphunter: 'Gap Hunter', amplifier: 'Multi-Platform', timing: 'Timing Engine', portfolio: 'Portfolio Manager', nichediscovery: 'Ніша Discovery', launcher: 'Channel Launcher', viralpattern: 'Viral Pattern', variation: 'Variation Engine', launch: 'Запуск Каналу', audienceasset: 'Audience Asset', humanreview: 'Human Review', bizmodel: 'Бізнес Модель', winnerscaling: 'Winner Scaling', archetype: 'Archetype Engine' };
+    window.go = function (id, el) {
+      PANES.forEach(p => { document.getElementById('p-' + p)?.classList.remove('on') });
+      document.getElementById('p-' + id)?.classList.add('on');
+      document.querySelectorAll('.ni').forEach(n => n.classList.remove('on'));
+      if (el) el.classList.add('on');
+      document.getElementById('bc').innerHTML = `<span>Контент ОС v3 /</span> ${CRUMBS[id] || id}`;
+      updateStats();
+      if (id === 'champion') renderChampionLib();
+      if (id === 'matrix') renderMatrix();
+      if (id === 'pipeline') renderAnalyticsTable();
+      if (id === 'evolution') updateEvoChecks();
+      if (id === 'hooklab') renderHookLab();
+      if (id === 'cloud') { loadSbConfig(); updateCloudStats(); }
+      if (id === 'factory') { applyFactoryMobileMode(); refreshFactoryMeta(true); refreshFactoryJobs(true); refreshFactoryServiceStatus(true); if (FACTORY_AUTO.currentJobId) refreshFactoryJob(FACTORY_AUTO.currentJobId, true); }
+      if (id === 'videofactory') { refreshAutomationStatus(); if (VF_AUTO.currentJobId) refreshAutomationJob(VF_AUTO.currentJobId, true); }
+      if (id === 'portfolio') { if (typeof renderPortfolio === 'function') renderPortfolio(); }
+      if (id === 'winnerscaling') { if (typeof renderPowerLaw === 'function') renderPowerLaw(); }
+      if (id === 'archetype') { if (typeof selectArchetype === 'function') { selectArchetype(window._selectedArchetype || 'shock'); renderContentMix(); } }
+      if (id === 'bizmodel') { if (typeof selectBizModel === 'function') selectBizModel(window._selectedBizModel || 'self'); }
+      if (id === 'viralpattern') { const el2 = document.getElementById('vp-niche'); if (el2) el2.value = NICHE.name + ' ' + MARKET.name; }
+      if (id === 'variation') { const el2 = document.getElementById('var-product'); if (el2) el2.value = NICHE.products[0] || ''; }
+    };
+
+    /* ── STATS ── */
+    function updateStats() {
+      const all = DB.genomes(), analytics = DB.analytics();
+      const champions = all.filter(g => g.is_champion);
+      const rev = analytics.reduce((a, c) => a + (c.revenue || 0), 0);
+      const dq = calcDataQuality();
+      const pct = Math.min((rev / (MARKET.goalMonthly || 500)) * 100, 100);
+      const dqC = dq >= 70 ? 'var(--green)' : dq >= 40 ? 'var(--amber)' : 'var(--red)';
+
+      ['nk-g', 'tb-g'].forEach(id => { const e = document.getElementById(id); if (e) e.textContent = all.length });
+      ['nk-c', 'tb-c'].forEach(id => { const e = document.getElementById(id); if (e) e.textContent = champions.length });
+      const dqStr = dq > 0 ? `${dq}%` : '—';
+      ['nk-dq', 'tb-dq'].forEach(id => { const e = document.getElementById(id); if (e) { e.textContent = dqStr; e.style.color = dq > 0 ? dqC : 'var(--t3)' } });
+      document.getElementById('nk-r').textContent = fA(rev);
+      document.getElementById('goal-fill').style.width = pct + '%';
+      document.getElementById('goal-pct').textContent = pct.toFixed(0) + '%';
+@@ -7571,124 +7573,470 @@ Reality rules: signals from actual user-provided data (Amazon URL, Google Trends
+            <span style="font-family:var(--m);font-size:12px;font-weight:700;color:${rc}">${sig.reality_score}</span>
+          </div>
+          <div style="font-family:var(--m);font-size:7px;color:var(--t4)">reality</div>
+          ${!isLowReality ? `<button class="btn ba bsm" style="font-size:8px;margin-top:6px;width:100%" onclick="sigToFactory(${JSON.stringify(sig).replace(/"/g, '&quot;')})">→</button>` : '<div style="font-family:var(--m);font-size:7px;color:var(--red);margin-top:5px;text-align:center">SKIP</div>'}
+        </div>
+      </div>
+    </div>`;
+      });
+      h += '</div>';
+      showR('signal', h);
+      notify(`✓ ${sigs.length} сигналів · ${realCount} реальних · ${synCount} вигаданих`);
+    }
+
+    function sigToFactory(sig) {
+      document.getElementById('f-topic').value = sig.title || '';
+      document.getElementById('f-product').value = `${sig.product_name || ''} ${sig.product_price || ''}`.trim();
+      if (sig.persona) document.getElementById('f-persona').value = sig.persona;
+      if (sig.hook_type) document.getElementById('f-hook').value = sig.hook_type;
+      go('factory', document.getElementById('ni-factory'));
+      notify('Реальний сигнал → Фабрика Контенту', 'g');
+    }
+
+    /* ═══════════════════════════════════════
+       CONTENT FACTORY
+    ═══════════════════════════════════════ */
+    async function runFactory() {
+      const topic = document.getElementById('f-topic')?.value.trim();
+      if (!topic) { notify('Введи тему відео', 'r'); return; }
+      const persona = document.getElementById('f-persona')?.value || 'renter';
+      const hookType = document.getElementById('f-hook')?.value || 'auto';
+      const city = document.getElementById('f-city')?.value || 'Sydney';
+      const product = document.getElementById('f-product')?.value || '';
+      const slang = document.getElementById('f-slang')?.value || 'medium';
+    const FACTORY_AUTO = {
+      currentJobId: '',
+      pollTimer: null,
+      mobileMode: localStorage.getItem('cos10_factory_mobile_mode') === '1',
+      meta: {
+        steps: [
+          { key: 'signal_generation', label: 'Сигнал' },
+          { key: 'script_generation', label: 'Скрипт' },
+          { key: 'voice_generation', label: 'Озвучка' },
+          { key: 'clip_fetch', label: 'Кліпи' },
+          { key: 'render_plan', label: 'План' },
+          { key: 'publish_package', label: 'Пакет' },
+          { key: 'save_outputs', label: 'Збереження' },
+          { key: 'done', label: 'Готово' }
+        ],
+        activeStatuses: ['queued', 'running', 'cancelling'],
+        terminalStatuses: ['completed', 'failed', 'cancelled', 'requires_follow_up'],
+        retryableStatuses: ['failed', 'cancelled', 'requires_follow_up'],
+        statusMeta: {
+          queued: { label: 'У черзі', tone: 'amber' },
+          running: { label: 'В роботі', tone: 'amber' },
+          cancelling: { label: 'Зупиняється', tone: 'amber' },
+          completed: { label: 'Завершено', tone: 'green' },
+          failed: { label: 'Помилка', tone: 'red' },
+          cancelled: { label: 'Зупинено', tone: 'muted' },
+          requires_follow_up: { label: 'Потрібен review', tone: 'blue' }
+        },
+        stepStateMeta: {
+          idle: { label: 'очікує', tone: 'muted' },
+          active: { label: 'активно', tone: 'amber' },
+          done: { label: 'готово', tone: 'green' },
+          failed: { label: 'помилка', tone: 'red' },
+          cancelled: { label: 'зупинено', tone: 'muted' },
+          needs_review: { label: 'потрібен review', tone: 'blue' }
+        }
+      }
+    };
+
+      resetPipe(); setPN(1, 'done'); setPN(2, 'active');
+      ld('factory', true, 'Генерую скрипт...');
+    function applyFactoryMobileMode() {
+      const pane = document.getElementById('p-factory');
+      const toggle = document.getElementById('factory-mobile-toggle');
+      const desktopCard = document.getElementById('factory-desktop-card');
+      const nav = document.querySelector('.nav');
+      const topbar = document.querySelector('.topbar');
+      const body = document.querySelector('.body');
+      if (toggle) toggle.textContent = `📱 Мобільний режим: ${FACTORY_AUTO.mobileMode ? 'Увімк.' : 'Вимк.'}`;
+      if (desktopCard) desktopCard.style.display = FACTORY_AUTO.mobileMode ? 'none' : '';
+      if (nav) nav.style.display = FACTORY_AUTO.mobileMode ? 'none' : '';
+      if (topbar) topbar.style.display = FACTORY_AUTO.mobileMode ? 'none' : '';
+      if (body) body.style.width = FACTORY_AUTO.mobileMode ? '100%' : '';
+      if (pane) pane.classList.toggle('factory-mobile-mode', FACTORY_AUTO.mobileMode);
+    }
+
+      // Check if we should use Champion DNA
+      const champions = DB.champions();
+      const mktFactCtx = `Ринок: ${MARKET.name}. Currency: ${MARKET.currency}. Amazon domain: ${MARKET.amazonDomain}. Affiliate tag: ${MARKET.tag}. Local cities: ${MARKET.cityEn.join(', ')}. Slang style: ${MARKET.slangExamples}.`;
+      const championHint = champions.length ? `Champion DNA available: frozen genes = ${JSON.stringify(champions[0]?.genes || {})}. Align with champion where possible.` : 'No champions yet.';
+    function toggleFactoryMobileMode() {
+      FACTORY_AUTO.mobileMode = !FACTORY_AUTO.mobileMode;
+      localStorage.setItem('cos10_factory_mobile_mode', FACTORY_AUTO.mobileMode ? '1' : '0');
+      applyFactoryMobileMode();
+      notify(FACTORY_AUTO.mobileMode ? '📱 Мобільний режим увімкнено' : '🖥 Десктопний режим увімкнено', 'g');
+    }
+
+      const r = await ai(
+        `AU Content Factory. Генерувати viral TikTok script. ${champions.length ? 'USE Champion DNA for frozen genes (hook/persona/emotion).' : ''}
+Schema:{"hook_ua":string,"hook_type":string,"problem_ua":string,"native_ad_ua":string,"solution_ua":string,"cta_ua":string,"caption_en":string,"hashtags":string[],"pacing":{"hook_s":number,"problem_s":number,"ad_s":number,"solution_s":number,"cta_s":number},"profit_score":number,"predicted_ctr":string,"genes":{"hook":string,"persona":string,"emotion":string,"pain":string,"product":string,"cta":string,"visual":string,"curiosity":string},"champion_alignment":number,"shadowban_warnings":string[],"affiliate_url":string}
+Champion alignment = how closely genes match existing champion (0-100). AU slang: ${slang}. Shadowban guard active.`,
+        `Topic:"${topic}". Persona:${persona}. Hook:${hookType}. City:${city}. Product:"${product || 'best AU option'}". ${championHint}`,
+        { hook_ua: `${city}! ${topic} — ось що ти не знаєш`, hook_type: hookType === 'auto' ? 'curiosity_gap' : hookType, problem_ua: 'Більшість орендарів у AU не знають про це поки проблема вже серйозна', native_ad_ua: `${product || 'Raid Max AU$18'} — перевірений особисто в ${city}`, solution_ua: 'Одна дія 5 хвилин = проблема вирішена на 3+ місяці', cta_ua: `Посилання в bio → ${MARKET.amazonDomain} ?tag=${MARKET.tag}`, caption_en: `${topic} ${city}. Amazon AU link in bio.`, hashtags: ['#pestcontrol', '#australia', '#' + city.toLowerCase()], pacing: { hook_s: 3, problem_s: 4, ad_s: 2, solution_s: 5, cta_s: 2 }, profit_score: 88, predicted_ctr: '9-13%', genes: { hook: 'curiosity_gap', persona, emotion: 'curiosity', pain: 'cost', product: 'cheapest', cta: 'bio_link', visual: 'pov_shot', curiosity: 'hidden_trick' }, champion_alignment: champions.length ? 72 : 0, shadowban_warnings: [], affiliate_url: mktUrl('B08EXAMPLE') }
+      );
+    function isFactoryActiveStatus(status) {
+      return (FACTORY_AUTO.meta?.activeStatuses || []).includes(status);
+    }
+
+      setPN(2, 'done'); setPN(3, 'done'); setPN(4, 'done'); setPN(5, 'done');
+    function isFactoryTerminalStatus(status) {
+      return (FACTORY_AUTO.meta?.terminalStatuses || []).includes(status);
+    }
+
+      // Champion check
+      const alignment = r.champion_alignment || 0;
+      const isChampionVariation = alignment >= 70 && champions.length > 0;
+      setPN(6, isChampionVariation ? 'done' : 'active');
+      await delay(200);
+      if (!isChampionVariation) setPN(6, 'done');
+    function canRetryFactoryJob(status) {
+      return (FACTORY_AUTO.meta?.retryableStatuses || []).includes(status);
+    }
+
+      // Auto-save genome
+      const genome = { id: uid(), title: topic, platform: document.getElementById('f-platform')?.value || 'TikTok', niche: 'pest_au', genes: r.genes || {}, synergy_score: r.profit_score || 75, is_champion: false, champion_variations: 0, metrics: { views: 0, ctr: 0, retention: 0, revenue: 0 }, summary_ua: 'Авто-тег з Фабрики.', predicted_ctr: r.predicted_ctr || '', created_at: now() };
+      DB.push('genomes', genome);
+      ld('factory', false); updateStats();
+    function getFactoryStatusMeta(status) {
+      return FACTORY_AUTO.meta?.statusMeta?.[status] || { label: status || 'queued', tone: 'amber' };
+    }
+
+    function getFactoryStepStateMeta(state) {
+      return FACTORY_AUTO.meta?.stepStateMeta?.[state] || { label: state || 'idle', tone: 'muted' };
+    }
+
+    function getFactoryToneColor(tone) {
+      return tone === 'green'
+        ? 'var(--green)'
+        : tone === 'red'
+          ? 'var(--red)'
+          : tone === 'blue'
+            ? 'var(--blue)'
+            : tone === 'muted'
+              ? 'var(--t4)'
+              : 'var(--amber)';
+    }
+
+    async function refreshFactoryMeta(silent = false) {
+      try {
+        const resp = await fetch('/api/factory/meta');
+        if (!resp.ok) throw new Error('status ' + resp.status);
+        const data = await resp.json();
+        FACTORY_AUTO.meta = {
+          ...FACTORY_AUTO.meta,
+          ...(data || {})
+        };
+      } catch (e) {
+        if (!silent) notify('Не вдалося завантажити factory meta: ' + e.message, 'r');
+      }
+    }
+
+    function renderFactoryJobList(jobs = []) {
+      const el = document.getElementById('factory-history');
+      if (!el) return;
+      if (!jobs.length) {
+        el.innerHTML = `<div style="font-family:var(--m);font-size:9px;color:var(--t3)">Історія job з’явиться тут.</div>`;
+        return;
+      }
+      el.innerHTML = jobs.slice(0, 6).map(job => {
+        const statusDisplay = getFactoryStatusMeta(job.status);
+        const statusColor = getFactoryToneColor(statusDisplay.tone);
+        return `
+        <div style="background:var(--bg);border:1px solid var(--b1);border-left:2px solid ${statusColor};border-radius:7px;padding:9px">
+          <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start">
+            <div>
+              <div style="font-size:12px;font-weight:700">${job.input?.topic || job.id}</div>
+              <div style="font-family:var(--m);font-size:8px;color:var(--t4)">${job.id} • <span style="color:${statusColor}">${statusDisplay.label}</span> • ${job.progress || 0}%</div>
+            </div>
+            <div class="row" style="gap:6px">
+              <button class="btn bx bsm" onclick="refreshFactoryJob('${job.id}')">Відкрити</button>
+              ${isFactoryActiveStatus(job.status) ? `<button class="btn bb bsm" onclick="cancelFactoryJob('${job.id}')">Стоп</button>` : ''}
+              ${canRetryFactoryJob(job.status) ? `<button class="btn bb bsm" onclick="retryFactoryJob('${job.id}')">Повторити</button>` : ''}
+            </div>
+          </div>
+        </div>
+      `;
+      }).join('');
+    }
+
+    function renderFactoryServiceStatus(data) {
+      const el = document.getElementById('factory-services');
+      if (!el) return;
+      const svc = data?.services || {};
+      el.innerHTML = [
+        vfServiceChip('Anthropic', svc.anthropic || svc.openai),
+        vfServiceChip('ElevenLabs', svc.elevenlabs),
+        vfServiceChip('Pexels', svc.pexels),
+        vfServiceChip('FFmpeg', svc.ffmpeg),
+        vfServiceChip('Buffer', svc.buffer),
+        vfServiceChip('YouTube', svc.youtube),
+        vfServiceChip('TikTok', svc.tiktok)
+      ].join('');
+    }
+
+    async function refreshFactoryServiceStatus(silent = false) {
+      try {
+        const resp = await fetch('/api/automation/status');
+        if (!resp.ok) throw new Error('status ' + resp.status);
+        const data = await resp.json();
+        renderFactoryServiceStatus(data);
+      } catch (e) {
+        const el = document.getElementById('factory-services');
+        if (el) el.innerHTML = `<span style="font-family:var(--m);font-size:8px;color:var(--red)">Статус недоступний: ${e.message}</span>`;
+        if (!silent) notify('Не вдалося перевірити готовність factory сервісів: ' + e.message, 'r');
+      }
+    }
+
+    async function refreshFactoryJobs(silent = false) {
+      try {
+        const resp = await fetch('/api/factory/jobs?limit=8');
+        if (!resp.ok) throw new Error('status ' + resp.status);
+        const data = await resp.json();
+        renderFactoryJobList(data.jobs || []);
+      } catch (e) {
+        if (!silent) notify('Не вдалося завантажити історію factory jobs: ' + e.message, 'r');
+      }
+    }
+
+    async function retryFactoryJob(jobId) {
+      try {
+        const resp = await fetch('/api/factory/jobs/' + jobId + '/retry', { method: 'POST' });
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data?.details || data?.error || ('status ' + resp.status));
+        FACTORY_AUTO.currentJobId = data.id;
+        localStorage.setItem('cos10_factory_last_job', data.id);
+        renderFactoryStatus(data);
+        renderFactoryResult(null);
+        startFactoryPolling(data.id);
+        await refreshFactoryJobs(true);
+        notify('♻️ Factory job перезапущено', 'g');
+      } catch (e) {
+        notify('Повторний запуск factory job не вдався: ' + e.message, 'r');
+      }
+    }
+
+    async function cancelFactoryJob(jobId) {
+      try {
+        const resp = await fetch('/api/factory/jobs/' + jobId + '/cancel', { method: 'POST' });
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data?.details || data?.error || ('status ' + resp.status));
+        FACTORY_AUTO.currentJobId = data.id;
+        localStorage.setItem('cos10_factory_last_job', data.id);
+        renderFactoryStatus(data);
+        await refreshFactoryJobs(true);
+        if (data.status === 'cancelled') stopFactoryPolling();
+        notify(data.status === 'cancelled' ? '🛑 Factory job скасовано' : '🛑 Запит на зупинку відправлено', 'g');
+      } catch (e) {
+        notify('Не вдалося зупинити factory job: ' + e.message, 'r');
+      }
+    }
+
+      const total = (r.pacing?.hook_s || 3) + (r.pacing?.problem_s || 4) + (r.pacing?.ad_s || 2) + (r.pacing?.solution_s || 5) + (r.pacing?.cta_s || 2);
+      const fullScript = `${r.hook_ua}\n\n${r.problem_ua}\n\n${r.native_ad_ua}\n\n${r.solution_ua}\n\n${r.cta_ua}`;
+    function factoryDemo() {
+      document.getElementById('f-topic').value = 'cockroach control London renters';
+      document.getElementById('f-product').value = 'gel bait';
+      document.getElementById('f-market').value = 'UK';
+      document.getElementById('f-platforms').value = 'TikTok,YouTube Shorts';
+      document.getElementById('f-duration').value = 24;
+      document.getElementById('f-scenes').value = 4;
+    }
+
+    function renderFactoryStatus(job) {
+      const el = document.getElementById('factory-status');
+      if (!el) return;
+      if (!job) {
+        el.innerHTML = `<div style="font-family:var(--m);font-size:9px;color:var(--t3)">Ще не запускали factory job.</div>`;
+        return;
+      }
+
+      const steps = FACTORY_AUTO.meta?.steps || [];
+      const currentIndex = Math.max(steps.findIndex(item => item.key === job.step), 0);
+      const progress = Math.max(0, Number(job.progress || 0));
+      const canRetry = canRetryFactoryJob(job.status);
+      const statusDisplay = getFactoryStatusMeta(job.status);
+      const statusColor = getFactoryToneColor(statusDisplay.tone);
+      el.innerHTML = `
+        <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap">
+          <div>
+            <div style="font-size:13px;font-weight:800">${job.input?.topic || 'Factory job'}</div>
+            <div style="font-family:var(--m);font-size:8px;color:var(--t4)">Job ${job.id || '—'} • ${statusDisplay.label}</div>
+          </div>
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+            ${canRetry && job.id ? `<button class="btn bx bsm" onclick="retryFactoryJob('${job.id}')">♻️ Повторити</button>` : ''}
+            ${isFactoryActiveStatus(job.status) && job.id ? `<button class="btn bb bsm" onclick="cancelFactoryJob('${job.id}')">🛑 Стоп</button>` : ''}
+            <div style="font-family:var(--m);font-size:9px;color:${statusColor}">${progress}%</div>
+          </div>
+        </div>
+        <div style="margin-top:10px;height:8px;background:var(--bg);border-radius:999px;overflow:hidden;border:1px solid var(--b1)">
+          <div style="height:100%;width:${progress}%;background:linear-gradient(90deg,var(--amber),var(--green))"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:10px">
+          ${steps.map(({ key, label }, index) => {
+            const state = job.status === 'completed'
+              ? 'done'
+              : job.status === 'cancelled' && key === job.step
+                ? 'cancelled'
+              : job.status === 'failed' && key === job.step
+                ? 'failed'
+                : job.status === 'requires_follow_up' && key === 'done'
+                  ? 'needs_review'
+                : index < currentIndex
+                  ? 'done'
+                : index === currentIndex
+                    ? 'active'
+                    : 'idle';
+            const stateMeta = getFactoryStepStateMeta(state);
+            const color = getFactoryToneColor(stateMeta.tone);
+            return `<div style="background:var(--bg);border:1px solid var(--b1);border-radius:6px;padding:8px"><div style="font-family:var(--m);font-size:8px;color:${color}">${stateMeta.label}</div><div style="font-size:11px;font-weight:700">${label}</div></div>`;
+          }).join('')}
+        </div>
+        ${job.status === 'requires_follow_up' ? `<div style="margin-top:10px;padding:8px;border-radius:6px;background:rgba(91,140,255,.08);border:1px solid rgba(91,140,255,.24);font-family:var(--m);font-size:8px;color:var(--blue)">Потрібен ручний догляд: render або publish-крок не завершився повним успіхом.</div>` : ''}
+        ${(job.log || []).length ? `<div style="margin-top:10px;background:var(--bg);border:1px solid var(--b1);border-radius:6px;padding:8px;max-height:140px;overflow:auto">${job.log.slice(-6).map(item => `<div style="font-family:var(--m);font-size:8px;color:var(--t3);margin-bottom:4px">${item.message}</div>`).join('')}</div>` : ''}
+      `;
+    }
+
+    function copyFactoryField(text, label) {
+      navigator.clipboard?.writeText(text || '');
+      notify(`Скопійовано: ${label}`, 'g');
+    }
+
+    function renderFactoryResult(job) {
+      const result = job?.resultPackage;
+      if (!result) {
+        showR('factory', '<div class="card"><div style="font-family:var(--m);font-size:9px;color:var(--t3)">Результат з’явиться після завершення factory job.</div></div>');
+        return;
+      }
+      const statusDisplay = getFactoryStatusMeta(job?.status);
+      const readyLabel = job?.status === 'completed'
+        ? 'ГОТОВО ДО РУЧНОЇ ПУБЛІКАЦІЇ'
+        : String(statusDisplay.label || '').toUpperCase();
+      const readyColor = getFactoryToneColor(statusDisplay.tone);
+      showR('factory', `
+  <div class="card" style="border-left:2px solid var(--amber)">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:12px">
+      <div style="flex:1">
+        <div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap;margin-bottom:5px">
+          ${gt('hook', r.hook_type)}
+          <span style="font-family:var(--m);font-size:9px;color:var(--t3)">⏱ ${total}s</span>
+          <span style="font-family:var(--m);font-size:9px;color:var(--green)">${r.predicted_ctr}</span>
+          ${isChampionVariation ? `<span class="badge" style="background:var(--amber-bg);border-color:var(--amber-bd);color:var(--amber)">🏆 Champion Variation (${alignment}%)</span>` : '<span class="badge bf">Новий кандидат</span>'}
+        <div class="card" style="border-left:2px solid ${readyColor}">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:12px">
+            <div>
+              <div style="font-size:16px;font-weight:800">${result.title || 'Factory output'}</div>
+              <div style="font-family:var(--m);font-size:8px;color:${readyColor}">${readyLabel}</div>
+            </div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+              ${result.videoUrl ? `<a href="${result.videoUrl}" target="_blank" class="btn bg bsm" style="text-decoration:none">Відкрити відео</a>` : ''}
+              ${result.voiceUrl ? `<a href="${result.voiceUrl}" target="_blank" class="btn bb bsm" style="text-decoration:none">Озвучка</a>` : ''}
+              ${job?.id ? `<a href="/api/factory/jobs/${job.id}/package.txt" target="_blank" class="btn bx bsm" style="text-decoration:none">⬇ Пакет</a>` : ''}
+              ${job?.id && canRetryFactoryJob(job.status) ? `<button class="btn bb bsm" onclick="retryFactoryJob('${job.id}')">♻️ Повторити</button>` : ''}
+            </div>
+          </div>
+          <div class="g2" style="gap:8px;margin-bottom:10px">
+            <div style="background:var(--bg);border:1px solid var(--b1);border-radius:7px;padding:10px">
+              <div style="font-family:var(--m);font-size:8px;color:var(--blue);margin-bottom:4px">Signal brief / Сигнал</div>
+              <div style="font-size:12px;line-height:1.7">${result.signalBrief?.angle || '—'}</div>
+              <div style="font-family:var(--m);font-size:8px;color:var(--t4);margin-top:6px">${result.signalBrief?.audience || ''}</div>
+            </div>
+            <div style="background:var(--bg);border:1px solid var(--b1);border-radius:7px;padding:10px">
+              <div style="font-family:var(--m);font-size:8px;color:var(--amber);margin-bottom:4px">Caption / Підпис</div>
+              <div style="font-size:12px;line-height:1.7">${result.caption || '—'}</div>
+              <div class="row" style="gap:6px;margin-top:8px">
+                <button class="btn bx bsm" onclick="copyFactoryField(${JSON.stringify(result.caption || '')}, 'caption')">Копіювати підпис</button>
+              </div>
+            </div>
+            <div style="background:var(--bg);border:1px solid var(--b1);border-radius:7px;padding:10px">
+              <div style="font-family:var(--m);font-size:8px;color:var(--amber);margin-bottom:4px">Hashtags / Хештеги</div>
+              <div style="font-size:12px;line-height:1.7">${(result.hashtags || []).join(' ') || '—'}</div>
+              <div class="row" style="gap:6px;margin-top:8px">
+                <button class="btn bx bsm" onclick="copyFactoryField(${JSON.stringify((result.hashtags || []).join(' '))}, 'hashtags')">Копіювати хештеги</button>
+              </div>
+            </div>
+          </div>
+          <div class="g2" style="gap:8px">
+            <div style="background:var(--bg);border:1px solid var(--b1);border-radius:7px;padding:10px">
+              <div style="font-family:var(--m);font-size:8px;color:var(--blue);margin-bottom:4px">Affiliate / output / Вихід</div>
+              <div style="font-size:12px;line-height:1.7">${result.affiliateLink || 'Ручний publish package'}</div>
+              <div class="row" style="gap:6px;margin-top:8px">
+                <button class="btn bx bsm" onclick="copyFactoryField(${JSON.stringify(result.affiliateLink || '')}, 'affiliate link')">Копіювати посилання</button>
+              </div>
+            </div>
+            <div style="background:var(--bg);border:1px solid var(--b1);border-radius:7px;padding:10px">
+              <div style="font-family:var(--m);font-size:8px;color:var(--green);margin-bottom:4px">Publish notes / Нотатки</div>
+              <div style="font-size:12px;line-height:1.7">${result.publishNotes || '—'}</div>
+              <div class="row" style="gap:6px;margin-top:8px">
+                <button class="btn bx bsm" onclick="copyFactoryField(${JSON.stringify(result.publishNotes || '')}, 'publish notes')">Копіювати нотатки</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="font-size:15px;font-weight:800">${topic}</div>
+      </div>
+      <div style="display:flex;gap:7px;align-items:center">
+        ${CB(fullScript, 'fac_full')}
+        <div class="sr"><div class="sr-v" style="color:var(--amber)">${r.profit_score || 88}</div><div class="sr-l">Score</div></div>
+      </div>
+    </div>
+    <!-- PACING -->
+    <div style="display:flex;gap:3px;height:20px;border-radius:5px;overflow:hidden;margin-bottom:12px">
+      ${[['ЗАЧ', r.pacing?.hook_s, 'var(--g-hook)'], ['ПРО', r.pacing?.problem_s, 'var(--g-pain)'], ['РЕК', r.pacing?.ad_s, 'var(--amber)'], ['РІШ', r.pacing?.solution_s, 'var(--g-product)'], ['ЗАК', r.pacing?.cta_s, 'var(--g-cta)']].map(([l, t, c]) => `<div style="flex:${t || 1};background:color-mix(in srgb,${c} 15%,transparent);border:1px solid color-mix(in srgb,${c} 35%,transparent);display:flex;align-items:center;justify-content:center;font-family:var(--m);font-size:7px;color:${c};gap:2px"><span>${l}</span><span>${t}s</span></div>`).join('')}
+    </div>
+    <!-- BLOCKS -->
+    <div class="g3" style="gap:7px;margin-bottom:8px">
+      ${[['🎣 ЗАЧІПКА', r.hook_ua, 'var(--g-hook)'], ['😰 ПРОБЛЕМА', r.problem_ua, 'var(--g-pain)'], ['💰 НАТИВНА РЕКЛАМА', r.native_ad_ua, 'var(--amber)']].map(([l, t, c]) => `<div style="background:var(--bg);border-radius:7px;padding:9px;border:1px solid var(--b1)"><div style="font-family:var(--m);font-size:7px;color:${c};font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px">${l}</div><div style="font-size:12px;line-height:1.6">${t || '—'}</div></div>`).join('')}
+    </div>
+    <div class="g2" style="gap:7px;margin-bottom:10px">
+      ${[['✅ РІШЕННЯ', r.solution_ua, 'var(--g-product)'], ['📲 ЗАКЛИК ДО ДІЇ', r.cta_ua, 'var(--g-cta)']].map(([l, t, c]) => `<div style="background:var(--bg);border-radius:7px;padding:9px;border:1px solid var(--b1)"><div style="font-family:var(--m);font-size:7px;color:${c};font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px">${l}</div><div style="font-size:12px;line-height:1.6">${t || '—'}</div></div>`).join('')}
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:3px;margin-bottom:6px">${allGT(r.genes || {})}</div>
+    ${isChampionVariation ? `<div style="padding:7px 10px;background:var(--amber-bg);border:1px solid var(--amber-bd);border-radius:6px;font-family:var(--m);font-size:9px;color:var(--amber)">🏆 Variation around champion · Frozen genes preserved · ${100 - alignment}% mutation space used</div>` : ''}
+  </div>`);
+      notify(isChampionVariation ? '✅ Варіація Чемпіона згенерована' : '✅ Новий кандидат згенерований', 'g');
+      `);
+    }
+
+    function stopFactoryPolling() {
+      if (FACTORY_AUTO.pollTimer) {
+        clearInterval(FACTORY_AUTO.pollTimer);
+        FACTORY_AUTO.pollTimer = null;
+      }
+    }
+
+    async function refreshFactoryJob(jobId, silent = false) {
+      if (!jobId) return;
+      try {
+        const resp = await fetch('/api/factory/jobs/' + jobId);
+        if (!resp.ok) throw new Error('job ' + resp.status);
+        const job = await resp.json();
+        FACTORY_AUTO.currentJobId = job.id;
+        localStorage.setItem('cos10_factory_last_job', job.id);
+        renderFactoryStatus(job);
+        renderFactoryResult(job);
+        refreshFactoryJobs(true);
+        if (isFactoryTerminalStatus(job.status)) stopFactoryPolling();
+        if (!silent && job.status === 'completed') notify('✅ Factory job готовий', 'g');
+        if (!silent && job.status === 'failed') notify('❌ Factory job завершився з помилкою', 'r');
+        if (!silent && job.status === 'cancelled') notify('🛑 Factory job зупинено', 'g');
+        if (!silent && job.status === 'requires_follow_up') notify('📝 Factory job потребує ручного допрацювання', 'y');
+      } catch (e) {
+        if (!silent) notify('Не вдалося оновити factory job: ' + e.message, 'r');
+      }
+    }
+
+    function startFactoryPolling(jobId) {
+      stopFactoryPolling();
+      if (!jobId) return;
+      FACTORY_AUTO.pollTimer = setInterval(() => refreshFactoryJob(jobId, true), 5000);
+    }
+
+    async function runFactory() {
+      const topic = document.getElementById('f-topic')?.value.trim();
+      if (!topic) { notify('Введи тему для factory job', 'r'); return; }
+
+      const payload = {
+        topic,
+        product: document.getElementById('f-product')?.value.trim() || 'affiliate product',
+        market: document.getElementById('f-market')?.value.trim() || 'Global',
+        platforms: (document.getElementById('f-platforms')?.value || 'TikTok,YouTube Shorts').split(',').map(v => v.trim()).filter(Boolean),
+        durationSec: +document.getElementById('f-duration')?.value || 24,
+        mode: 'simple',
+        advanced: {
+          archetype: document.getElementById('f-archetype')?.value.trim() || '',
+          scenesCount: +document.getElementById('f-scenes')?.value || 4,
+          voiceId: document.getElementById('f-voice-id')?.value.trim() || '',
+          renderMode: document.getElementById('f-render-mode')?.value || 'live'
+        }
+      };
+
+      const btn = document.getElementById('factory-run-btn');
+      if (btn) btn.disabled = true;
+      ld('factory', true, 'Запускаю factory job...');
+      renderFactoryStatus({ id: '—', input: payload, status: 'queued', progress: 2, step: 'queued', log: [{ message: 'Створюю job...' }] });
+
+      try {
+        const resp = await fetch('/api/factory/run', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data?.details || data?.error || ('status ' + resp.status));
+        FACTORY_AUTO.currentJobId = data.id;
+        localStorage.setItem('cos10_factory_last_job', data.id);
+        renderFactoryStatus(data);
+        renderFactoryResult(null);
+        startFactoryPolling(data.id);
+        await refreshFactoryJob(data.id, true);
+        await refreshFactoryJobs(true);
+        notify('🏭 Factory job запущено', 'g');
+      } catch (e) {
+        notify('Запуск factory job не вдався: ' + e.message, 'r');
+      } finally {
+        ld('factory', false);
+        if (btn) btn.disabled = false;
+      }
+    }
+
+    /* ═══════════════════════════════════════
+       GENOME TAGGER
+    ═══════════════════════════════════════ */
+    function genomeDemo() {
+      document.getElementById('g-title').value = "Renters in AU using this $12 pest trick landlords hate";
+      document.getElementById('g-script').value = "Sydney apartment. Found cockroaches. Landlord refuses. $12 Amazon AU product works better than $300 service. Link in bio.";
+      document.getElementById('g-views').value = '84000';
+      document.getElementById('g-ctr').value = '11.4';
+      document.getElementById('g-ret').value = '68';
+      document.getElementById('g-rev').value = '182.40';
+      notify('Демо завантажено → натисни «Визначити ДНК»');
+    }
+
+    async function runGenomeTagger() {
+      const title = document.getElementById('g-title')?.value.trim();
+      if (!title) { notify('Введи назву відео', 'r'); return; }
+      const script = document.getElementById('g-script')?.value.trim() || '';
+      const views = +document.getElementById('g-views')?.value || 0;
+      const ctr = +document.getElementById('g-ctr')?.value || 0;
+      const ret = +document.getElementById('g-ret')?.value || 0;
+      const rev = +document.getElementById('g-rev')?.value || 0;
+      const champV = +document.getElementById('champ-views')?.value || 50000;
+      const champC = +document.getElementById('champ-ctr')?.value || 8;
+@@ -9314,52 +9662,61 @@ Rules:
+        `Topic: ${d.topic}`,
+        `Ринок: ${MARKET.name} | ${MARKET.currency} | ${MARKET.amazonDomain}`,
+        `Генеруватиd: ${new Date().toLocaleString('uk-UA')}`,
+        `\n${'═'.repeat(50)}\nSCRIPT\n${'═'.repeat(50)}`,
+        d.scriptData?.full_script || '—',
+        `\n${'═'.repeat(50)}\nSUBTITLES (SRT)\n${'═'.repeat(50)}`,
+        d.editorKit?.subtitles_srt || '—',
+        `\n${'═'.repeat(50)}\nCAPCUT STEPS\n${'═'.repeat(50)}`,
+        ...(d.editorKit?.steps || []).map(s => `${s.n}. ${s.title}\n   ${s.sub || ''}`),
+        `\n${'═'.repeat(50)}\nPEXELS CLIPS\n${'═'.repeat(50)}`,
+        ...(d.visualData || []).map(v => `${v.label}: ${v.keywords} → ${(v.clips || []).map(c => c.pexels_url || '').join(', ')}`),
+        `\n${'═'.repeat(50)}\nAFFILIATE\n${'═'.repeat(50)}`,
+        `URL: ${d.editorKit?.affiliate_url}`,
+        `Tag: ${MARKET.tag}`,
+      ];
+      const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `video-package-${d.topic.slice(0, 30).replace(/\s/g, '-')}.txt`;
+      a.click();
+      notify('⬇ Пакет завантажено', 'g');
+    }
+
+    /* Hook into DOMContentLoaded for VF config restore */
+    document.addEventListener('DOMContentLoaded', () => {
+      applyFactoryMobileMode();
+      refreshFactoryJobs(true);
+      refreshFactoryServiceStatus(true);
+      loadVfConfig();
+      refreshAutomationStatus();
+      const lastFactoryJobId = localStorage.getItem('cos10_factory_last_job') || '';
+      if (lastFactoryJobId) {
+        FACTORY_AUTO.currentJobId = lastFactoryJobId;
+        refreshFactoryJob(lastFactoryJobId, true);
+        startFactoryPolling(lastFactoryJobId);
+      }
+      const lastJobId = localStorage.getItem('cos10_vf_last_job') || '';
+      if (lastJobId) {
+        VF_AUTO.currentJobId = lastJobId;
+        refreshAutomationJob(lastJobId, true);
+        startAutomationPolling(lastJobId);
+      }
+    });
+
+
+    /* ═══════════════════════════════════════════════════════════
+       CREATOR OS v5 — MULTI-NICHE · SUPABASE REAL · HEYGEN · SAAS
+    ═══════════════════════════════════════════════════════════ */
+
+    /* ── MULTI-NICHE SYSTEM ── */
+    const NICHES = {
+      pest: {
+        id: 'pest', icon: '🕷', name: 'Pest Control',
+        nameUa: 'Шкідники', color: 'var(--amber)',
+        products: ['cockroach spray', 'spider killer', 'ant bait', 'termite treatment', 'mosquito repellent'],
+        topics: ['cockroach trick', 'spider season', 'ant infestation', 'termite signs', 'mosquito hack'],
+        keywords: ['pest control', 'bug killer', 'home pests', 'insect removal'],
+        amazonCategory: 'pest control',
+        avgOrderValue: 22,
+        convRate: 0.012,
+      },

@@ -7,6 +7,8 @@ const fs = require('fs/promises');
 const path = require('path');
 const { promisify } = require('util');
 const { execFile } = require('child_process');
+const { createClient } = require('@supabase/supabase-js');
+const packageJson = require('./package.json');
 
 dotenv.config();
 const execFileAsync = promisify(execFile);
@@ -14,9 +16,10 @@ const execFileAsync = promisify(execFile);
 function checkEnv() {
   const required = ['ANTHROPIC_API_KEY', 'ELEVENLABS_API_KEY', 'PEXELS_API_KEY'];
   const recommended = ['OPENAI_API_KEY'];
-  const missing = required.filter(key => !process.env[key]);
-  if (missing.length > 0) {
-    console.warn('⚠️  Missing required environment variables:', missing.join(', '));
+  const missing = required.filter(key => !process.env[required.indexOf(key)]); // Wait, fix this logic
+  const missingKeys = required.filter(key => !process.env[key]);
+  if (missingKeys.length > 0) {
+    console.warn('⚠️  Missing required environment variables:', missingKeys.join(', '));
     if (!process.env.OPENAI_API_KEY) {
       console.warn('   ⚠️  Also missing OPENAI_API_KEY fallback.');
     }
@@ -29,10 +32,13 @@ checkEnv();
 const app = express();
 
 const PORT = process.env.PORT || 3000;
+const APP_VERSION = packageJson.version || '1.0.3';
+const FRONTEND_LABEL = `v${APP_VERSION} · LIVE ON RENDER`;
 const ANTHROPIC_MODEL = process.env.ANTHROPIC_MODEL || 'claude-3-5-sonnet-20240620';
 const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
 const ELEVENLABS_VOICE_ID = process.env.ELEVENLABS_VOICE_ID || '21m00Tcm4TlvDq8ikWAM';
 let FFMPEG_PATH = process.env.FFMPEG_PATH || 'ffmpeg';
+
 try {
   const ffmpeg = require('ffmpeg-static');
   if (ffmpeg) FFMPEG_PATH = ffmpeg;
@@ -48,6 +54,11 @@ const RENDER_DIR = path.join(RUNTIME_DIR, 'renders');
 
 app.use(cors());
 app.use(express.json({ limit: '2mb' }));
+app.use((_req, res, next) => {
+  res.setHeader('X-App-Version', APP_VERSION);
+  res.setHeader('X-Frontend-Label', FRONTEND_LABEL);
+  next();
+});
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -78,7 +89,8 @@ function jsonError(res, status, error, details) {
 }
 
 function cleanClaudeText(data) {
-  return data.content?.map(block => block.text || '').join('').replace(/```json|```/g, '').trim();
+  const text = data.content?.map(block => block.text || '').join('') || '';
+  return text.replace(/```json|```/g, '').trim();
 }
 
 function splitScenes(text, count = 4) {
@@ -259,6 +271,66 @@ async function generateScriptPlan(input) {
   } catch (error) {
     console.warn('Script generation fallback:', error.message);
     return fallbackScriptPlan(input);
+  }
+}
+
+async function generateSignalBrief(input = {}) {
+  const useAnthropic = !!process.env.ANTHROPIC_API_KEY;
+  const useOpenAI = !!process.env.OPENAI_API_KEY;
+  const topic = input.topic || 'AI content system';
+  const product = input.product || 'affiliate product';
+  const market = input.market || 'Global';
+  const platforms = Array.isArray(input.platforms) ? input.platforms.join(', ') : (input.platform || 'TikTok');
+
+  if (!useAnthropic && !useOpenAI) {
+    return {
+      source: 'fallback',
+      topic,
+      angle: `${topic} with a direct product-led hook`,
+      audience: `buyers in ${market}`,
+      problem: `People in ${market} do not have a simple fast solution for ${topic}.`,
+      promise: `${product} helps reduce friction and speed up the outcome.`,
+      marketNote: `Prioritize short-form hooks for ${platforms}.`
+    };
+  }
+
+  const system = [
+    'You create compact market-ready signal briefs for an automated short-form content factory.',
+    'Return only valid JSON.',
+    'Keep the output concise, practical, and ready for script generation.'
+  ].join(' ');
+
+  const user = [
+    `Topic: ${topic}`,
+    `Product: ${product}`,
+    `Market: ${market}`,
+    `Platforms: ${platforms}`,
+    'Schema:',
+    '{"topic":"string","angle":"string","audience":"string","problem":"string","promise":"string","marketNote":"string"}'
+  ].join('\n');
+
+  try {
+    if (useAnthropic) {
+      const data = await callAnthropic(system, [{ role: 'user', content: user }], ANTHROPIC_MODEL, 600);
+      return JSON.parse(cleanClaudeText(data));
+    }
+
+    const content = await callOpenAI([
+      { role: 'system', content: system },
+      { role: 'user', content: user }
+    ]);
+    return JSON.parse(content);
+  } catch (error) {
+    console.warn('Signal generation fallback:', error.message);
+    return {
+      source: 'fallback',
+      topic,
+      angle: `${topic} with a direct product-led hook`,
+      audience: `buyers in ${market}`,
+      problem: `People in ${market} do not have a simple fast solution for ${topic}.`,
+      promise: `${product} helps reduce friction and speed up the outcome.`,
+      marketNote: `Prioritize short-form hooks for ${platforms}.`
+    };
   }
 }
 
@@ -504,16 +576,508 @@ function buildAnalyticsPlan({ jobId, platform = 'TikTok' }) {
   };
 }
 
+const FACTORY_STEP_DEFS = [
+  { key: 'signal_generation', label: 'Сигнал' },
+  { key: 'script_generation', label: 'Скрипт' },
+  { key: 'voice_generation', label: 'Озвучка' },
+  { key: 'clip_fetch', label: 'Кліпи' },
+  { key: 'render_plan', label: 'План' },
+  { key: 'publish_package', label: 'Пакет' },
+  { key: 'save_outputs', label: 'Збереження' },
+  { key: 'done', label: 'Готово' }
+];
+
+const FACTORY_ACTIVE_STATUSES = ['queued', 'running', 'cancelling'];
+const FACTORY_TERMINAL_STATUSES = ['completed', 'failed', 'cancelled', 'requires_follow_up'];
+const FACTORY_RETRYABLE_STATUSES = ['failed', 'cancelled', 'requires_follow_up'];
+
+const FACTORY_STATUS_META = {
+  queued: { label: 'У черзі', tone: 'amber' },
+  running: { label: 'В роботі', tone: 'amber' },
+  cancelling: { label: 'Зупиняється', tone: 'amber' },
+  completed: { label: 'Завершено', tone: 'green' },
+  failed: { label: 'Помилка', tone: 'red' },
+  cancelled: { label: 'Зупинено', tone: 'muted' },
+  requires_follow_up: { label: 'Потрібен review', tone: 'blue' }
+};
+
+const FACTORY_STEP_STATE_META = {
+  idle: { label: 'очікує', tone: 'muted' },
+  active: { label: 'активно', tone: 'amber' },
+  done: { label: 'готово', tone: 'green' },
+  failed: { label: 'помилка', tone: 'red' },
+  cancelled: { label: 'зупинено', tone: 'muted' },
+  needs_review: { label: 'потрібен review', tone: 'blue' }
+};
+
+let supabaseServerClient = null;
+let supabaseServerInit = false;
+
+function getSupabaseServerClient() {
+  if (supabaseServerInit) return supabaseServerClient;
+  supabaseServerInit = true;
+
+  const url = process.env.SUPABASE_URL || process.env.SUPABASE_PROJECT_URL || '';
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || '';
+
+  if (!url || !key) {
+    supabaseServerClient = null;
+    return null;
+  }
+
+  supabaseServerClient = createClient(url, key, {
+    auth: { persistSession: false, autoRefreshToken: false }
+  });
+  return supabaseServerClient;
+}
+
+async function syncJobToSupabase(job) {
+  const sb = getSupabaseServerClient();
+  if (!sb) return { status: 'not_configured' };
+
+  try {
+    const { error } = await sb.from('factory_jobs').upsert({
+      id: job.id,
+      data: job,
+      updated_at: job.updatedAt || new Date().toISOString()
+    });
+    if (error) throw error;
+    return { status: 'synced' };
+  } catch (error) {
+    console.warn('Supabase job sync skipped:', error.message);
+    return { status: 'error', error: error.message };
+  }
+}
+
+async function readJobFromSupabase(jobId) {
+  const sb = getSupabaseServerClient();
+  if (!sb) return null;
+
+  try {
+    const { data, error } = await sb
+      .from('factory_jobs')
+      .select('data')
+      .eq('id', jobId)
+      .maybeSingle();
+    if (error) throw error;
+    return data?.data || null;
+  } catch (error) {
+    console.warn('Supabase job read skipped:', error.message);
+    return null;
+  }
+}
+
+async function listJobsFromSupabase(limit = 20) {
+  const sb = getSupabaseServerClient();
+  if (!sb) return [];
+
+  try {
+    const { data, error } = await sb
+      .from('factory_jobs')
+      .select('data, updated_at')
+      .order('updated_at', { ascending: false })
+      .limit(limit);
+    if (error) throw error;
+    return (data || []).map(row => row.data).filter(Boolean);
+  } catch (error) {
+    console.warn('Supabase job list skipped:', error.message);
+    return [];
+  }
+}
+
 async function writeJob(job) {
   const filePath = path.join(JOB_DIR, `${job.id}.json`);
-  await fs.writeFile(filePath, JSON.stringify(job, null, 2));
+  const tempPath = `${filePath}.tmp`;
+  await fs.writeFile(tempPath, JSON.stringify(job, null, 2));
+  await fs.rename(tempPath, filePath);
+  await syncJobToSupabase(job);
   return filePath;
 }
 
 async function readJob(jobId) {
   const filePath = path.join(JOB_DIR, `${jobId}.json`);
-  const content = await fs.readFile(filePath, 'utf8');
-  return JSON.parse(content);
+  try {
+    const content = await fs.readFile(filePath, 'utf8');
+    return JSON.parse(content);
+  } catch (error) {
+    if (error?.code !== 'ENOENT') throw error;
+    const remote = await readJobFromSupabase(jobId);
+    if (remote) return remote;
+    throw error;
+  }
+}
+
+async function listJobs(limit = 20) {
+  const localJobs = await (async () => {
+    try {
+      const files = await fs.readdir(JOB_DIR);
+      const jobFiles = files.filter(file => file.endsWith('.json'));
+      const jobs = await Promise.all(jobFiles.map(async file => {
+        try {
+          const content = await fs.readFile(path.join(JOB_DIR, file), 'utf8');
+          return JSON.parse(content);
+        } catch { return null; }
+      }));
+      return jobs
+        .filter(Boolean)
+        .sort((a, b) => new Date(b.updatedAt || b.createdAt || 0) - new Date(a.updatedAt || a.createdAt || 0))
+        .slice(0, limit);
+    } catch {
+      return [];
+    }
+  })();
+
+  const remoteJobs = await listJobsFromSupabase(limit);
+  const merged = new Map();
+  [...localJobs, ...remoteJobs].forEach(job => {
+    if (!job?.id) return;
+    const existing = merged.get(job.id);
+    if (!existing || new Date(job.updatedAt || job.createdAt || 0) > new Date(existing.updatedAt || existing.createdAt || 0)) {
+      merged.set(job.id, job);
+    }
+  });
+
+  return Array.from(merged.values())
+    .sort((a, b) => new Date(b.updatedAt || b.createdAt || 0) - new Date(a.updatedAt || a.createdAt || 0))
+    .slice(0, limit);
+}
+
+function validateFactoryInput(input = {}) {
+  const errors = [];
+  const topic = String(input.topic || '').trim();
+  const product = String(input.product || '').trim();
+  const market = String(input.market || '').trim();
+  const platformsRaw = Array.isArray(input.platforms)
+    ? input.platforms.map(item => String(item).trim()).filter(Boolean)
+    : String(input.platform || input.platforms || '')
+      .split(',')
+      .map(item => item.trim())
+      .filter(Boolean);
+  const platforms = [...new Set(platformsRaw)];
+  const durationSec = Number(input.durationSec || 24);
+  const scenesCount = Number(input.advanced?.scenesCount || input.scenesCount || 4);
+  const mode = String(input.mode || 'simple').trim() || 'simple';
+  const renderMode = String(input.advanced?.renderMode || (input.dryRun ? 'dry' : 'live')).trim() || 'live';
+
+  if (!topic) errors.push('Topic is required.');
+  if (topic.length > 180) errors.push('Topic must be 180 characters or less.');
+  if (!product) errors.push('Product is required.');
+  if (!market) errors.push('Market is required.');
+  if (!platforms.length) errors.push('At least one platform is required.');
+  if (platforms.length > 3) errors.push('No more than 3 platforms are allowed per run.');
+  if (!Number.isFinite(durationSec) || durationSec < 6 || durationSec > 90) errors.push('Duration must be between 6 and 90 seconds.');
+  if (!Number.isFinite(scenesCount) || scenesCount < 1 || scenesCount > 8) errors.push('Scenes count must be between 1 and 8.');
+  if (!['simple', 'advanced'].includes(mode)) errors.push('Mode must be either "simple" or "advanced".');
+  if (!['live', 'dry'].includes(renderMode)) errors.push('Render mode must be either "live" or "dry".');
+
+  return {
+    ok: errors.length === 0,
+    errors,
+    value: {
+      topic,
+      product,
+      market,
+      platforms,
+      durationSec,
+      mode,
+      advanced: {
+        ...(input.advanced || {}),
+        scenesCount,
+        renderMode
+      },
+      dryRun: renderMode === 'dry'
+    }
+  };
+}
+
+async function createFactoryJob(input = {}) {
+  const job = {
+    id: uid('factory'),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    mode: input.mode || 'simple',
+    retryOf: input.retryOf || null,
+    retryDepth: Number(input.retryDepth || 0),
+    input: {
+      topic: input.topic || null,
+      product: input.product || null,
+      market: input.market || null,
+      platform: input.platform || input.platforms || null,
+      durationSec: input.durationSec || null,
+      advanced: input.advanced || {}
+    },
+    status: 'queued',
+    step: 'queued',
+    progress: 0,
+    stepIndex: 0,
+    stepCount: FACTORY_STEP_DEFS.length,
+    log: []
+  };
+  await writeJob(job);
+  return job;
+}
+
+async function updateFactoryJob(jobId, patch = {}, logMessage = '') {
+  const current = await readJob(jobId);
+  const nextLog = logMessage
+    ? [...(current.log || []), { at: new Date().toISOString(), message: logMessage }]
+    : (current.log || []);
+  const next = {
+    ...current,
+    ...patch,
+    updatedAt: new Date().toISOString(),
+    log: nextLog
+  };
+  await writeJob(next);
+  return next;
+}
+
+function isFactoryJobTerminal(job) {
+  return ['completed', 'failed', 'cancelled', 'requires_follow_up'].includes(job?.status);
+}
+
+async function assertFactoryJobNotCancelled(jobId) {
+  const job = await readJob(jobId);
+  if (!job?.cancelRequested && job?.status !== 'cancelled') return job;
+
+  await updateFactoryJob(jobId, {
+    status: 'cancelled',
+    cancelRequested: false,
+    step: 'cancelled'
+  }, 'Factory job зупинено користувачем');
+
+  const error = new Error('Factory job cancelled');
+  error.code = 'FACTORY_JOB_CANCELLED';
+  throw error;
+}
+
+async function cancelFactoryJob(jobId) {
+  const current = await readJob(jobId);
+
+  if (isFactoryJobTerminal(current)) {
+    return {
+      ok: false,
+      status: 409,
+      error: `Cannot cancel a job in status "${current.status}".`
+    };
+  }
+
+  if (current.status === 'queued') {
+    const cancelled = await updateFactoryJob(jobId, {
+      status: 'cancelled',
+      cancelRequested: false,
+      step: 'cancelled',
+      progress: current.progress || 0
+    }, 'Factory job скасовано до старту');
+    return { ok: true, job: cancelled };
+  }
+
+  const cancelling = await updateFactoryJob(jobId, {
+    cancelRequested: true,
+    status: 'cancelling'
+  }, 'Отримано запит на зупинку job');
+
+  return { ok: true, job: cancelling };
+}
+
+async function executeFactoryJob(jobId, input = {}) {
+  const platform = Array.isArray(input.platforms)
+    ? input.platforms.join(',')
+    : (input.platform || input.platforms || 'TikTok,YouTube Shorts,Instagram');
+  const dryRun = Boolean(input.dryRun || input.advanced?.dryRun || input.advanced?.renderMode === 'dry');
+
+  try {
+    await assertFactoryJobNotCancelled(jobId);
+    await updateFactoryJob(jobId, {
+      status: 'running',
+      step: 'signal_generation',
+      stepIndex: 1,
+      progress: 8
+    }, 'Генерація signal brief');
+
+    const signalBrief = await generateSignalBrief({
+      topic: input.topic,
+      product: input.product,
+      market: input.market,
+      platforms: input.platforms || input.platform
+    });
+
+    await assertFactoryJobNotCancelled(jobId);
+    await updateFactoryJob(jobId, {
+      signalBrief,
+      step: 'script_generation',
+      stepIndex: 2,
+      progress: 18
+    }, 'Генерація script plan');
+
+    const scriptPlan = input.scriptPlan || await generateScriptPlan({
+      topic: signalBrief?.topic || input.topic,
+      product: input.product,
+      platform,
+      durationSec: input.durationSec,
+      scenesCount: input.advanced?.scenesCount || input.scenesCount
+    });
+
+    await assertFactoryJobNotCancelled(jobId);
+    await updateFactoryJob(jobId, {
+      scriptPlan,
+      step: 'voice_generation',
+      stepIndex: 3,
+      progress: 32
+    }, 'Генерація voiceover');
+
+    const voiceResult = await generateVoiceAsset({
+      jobId,
+      text: scriptPlan.full_voiceover,
+      voiceId: input.advanced?.voiceId || input.voiceId || ELEVENLABS_VOICE_ID
+    });
+
+    await assertFactoryJobNotCancelled(jobId);
+    await updateFactoryJob(jobId, {
+      voiceResult,
+      step: 'clip_fetch',
+      stepIndex: 4,
+      progress: 46
+    }, 'Пошук кліпів');
+
+    const clipResult = await generateClipAssets({
+      jobId,
+      scenes: scriptPlan.scenes || []
+    });
+
+    await assertFactoryJobNotCancelled(jobId);
+    await updateFactoryJob(jobId, {
+      clipResult,
+      step: 'render_plan',
+      stepIndex: 5,
+      progress: 60
+    }, 'Планування рендера');
+
+    const clipAssets = (clipResult.assets || []).filter(asset => asset.status === 'completed');
+    const renderResult = await renderVideoAsset({
+      jobId,
+      clipAssets,
+      audioFilePath: voiceResult.filePath,
+      scenes: scriptPlan.scenes || [],
+      dryRun
+    });
+
+    await assertFactoryJobNotCancelled(jobId);
+    await updateFactoryJob(jobId, {
+      renderResult,
+      step: 'publish_package',
+      stepIndex: 6,
+      progress: 76
+    }, 'Підготовка publish package');
+
+    const publishPlan = buildPublishPlan({
+      jobId,
+      platform,
+      renderResult
+    });
+
+    const analyticsPlan = buildAnalyticsPlan({
+      jobId,
+      platform
+    });
+
+    const hashtags = (scriptPlan.caption || '')
+      .split(/\s+/)
+      .filter(token => token.startsWith('#'))
+      .slice(0, 8);
+
+    const resultPackage = {
+      signalBrief,
+      videoUrl: renderResult?.publicUrl || null,
+      title: scriptPlan.title || input.topic || 'Factory output',
+      caption: scriptPlan.caption || '',
+      hashtags,
+      affiliateLink: publishPlan.output || null,
+      publishNotes: `Готово до ручної публікації на ${platform}.`,
+      voiceUrl: voiceResult?.publicUrl || null,
+      clips: (clipResult.assets || []).map(asset => ({
+        scene_id: asset.scene_id,
+        query: asset.query,
+        publicUrl: asset.publicUrl || null,
+        status: asset.status
+      }))
+    };
+
+    await assertFactoryJobNotCancelled(jobId);
+    await updateFactoryJob(jobId, {
+      publishPlan,
+      analyticsPlan,
+      resultPackage,
+      step: 'save_outputs',
+      stepIndex: 7,
+      progress: 92
+    }, 'Збереження результатів job');
+
+    return await updateFactoryJob(jobId, {
+      status: renderResult.status === 'completed' ? 'completed' : 'requires_follow_up',
+      step: 'done',
+      stepIndex: 8,
+      progress: 100
+    }, 'Factory job завершено');
+  } catch (error) {
+    if (error?.code === 'FACTORY_JOB_CANCELLED') {
+      return readJob(jobId);
+    }
+    const errorDetails = error.response?.data || error.message;
+    await updateFactoryJob(jobId, {
+      status: 'failed',
+      step: 'failed',
+      error: errorDetails
+    }, `Помилка: ${typeof errorDetails === 'string' ? errorDetails : JSON.stringify(errorDetails)}`);
+    throw error;
+  }
+}
+
+function buildFactoryPackageText(job) {
+  const result = job?.resultPackage || {};
+  const lines = [
+    'CREATOR OS — FACTORY PACKAGE',
+    `Job: ${job?.id || '—'}`,
+    `Status: ${job?.status || '—'}`,
+    `Created: ${job?.createdAt || '—'}`,
+    '',
+    `Topic: ${job?.input?.topic || '—'}`,
+    `Product: ${job?.input?.product || '—'}`,
+    `Market: ${job?.input?.market || '—'}`,
+    `Platforms: ${Array.isArray(job?.input?.platform) ? job.input.platform.join(', ') : (job?.input?.platform || '—')}`,
+    '',
+    'SIGNAL',
+    result.signalBrief?.angle || '—',
+    result.signalBrief?.audience ? `Audience: ${result.signalBrief.audience}` : '',
+    result.signalBrief?.problem ? `Problem: ${result.signalBrief.problem}` : '',
+    result.signalBrief?.promise ? `Promise: ${result.signalBrief.promise}` : '',
+    result.signalBrief?.marketNote ? `Market note: ${result.signalBrief.marketNote}` : '',
+    '',
+    'TITLE',
+    result.title || '—',
+    '',
+    'CAPTION',
+    result.caption || '—',
+    '',
+    'HASHTAGS',
+    (result.hashtags || []).join(' ') || '—',
+    '',
+    'AFFILIATE LINK / OUTPUT',
+    result.affiliateLink || '—',
+    '',
+    'PUBLISH NOTES',
+    result.publishNotes || '—',
+    '',
+    'VIDEO URL',
+    result.videoUrl || '—',
+    '',
+    'VOICE URL',
+    result.voiceUrl || '—',
+    '',
+    'CLIPS',
+    ...((result.clips || []).map(clip => `Scene ${clip.scene_id}: ${clip.query || '—'} -> ${clip.publicUrl || clip.status || '—'}`))
+  ];
+  return lines.join('\n');
 }
 
 function getAutomationStatus(ffmpegAvailable) {
@@ -533,6 +1097,20 @@ app.get('/health', async (_req, res) => {
   res.status(200).json({ status: 'ok' });
 });
 
+app.get('/api/version', (_req, res) => {
+  res.json({
+    version: APP_VERSION,
+    frontendLabel: FRONTEND_LABEL
+  });
+});
+
+app.get('/version', (_req, res) => {
+  res.json({
+    version: APP_VERSION,
+    frontendLabel: FRONTEND_LABEL
+  });
+});
+
 app.get('/api/automation/status', async (_req, res) => {
   const ffmpegAvailable = await isFfmpegAvailable();
   res.json({
@@ -541,12 +1119,93 @@ app.get('/api/automation/status', async (_req, res) => {
   });
 });
 
-app.get('/api/automation/jobs/:jobId', async (req, res) => {
+app.get('/api/factory/meta', (_req, res) => {
+  res.json({
+    steps: FACTORY_STEP_DEFS,
+    activeStatuses: FACTORY_ACTIVE_STATUSES,
+    terminalStatuses: FACTORY_TERMINAL_STATUSES,
+    retryableStatuses: FACTORY_RETRYABLE_STATUSES,
+    statusMeta: FACTORY_STATUS_META,
+    stepStateMeta: FACTORY_STEP_STATE_META
+  });
+});
+
+app.get('/api/factory/jobs', async (req, res) => {
+  try {
+    const limit = Math.min(Number(req.query.limit) || 20, 50);
+    const jobs = await listJobs(limit);
+    res.json({ jobs });
+  } catch (error) {
+    jsonError(res, 500, 'Failed to list jobs', error.message);
+  }
+});
+
+app.get('/api/factory/jobs/:jobId', async (req, res) => {
   try {
     const job = await readJob(req.params.jobId);
     res.json(job);
   } catch (error) {
     jsonError(res, 404, 'Job not found', error.message);
+  }
+});
+
+app.get('/api/factory/jobs/:jobId/package.txt', async (req, res) => {
+  try {
+    const job = await readJob(req.params.jobId);
+    const body = buildFactoryPackageText(job);
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${job.id}-package.txt"`);
+    res.send(body);
+  } catch (error) {
+    jsonError(res, 404, 'Job package not found', error.message);
+  }
+});
+
+app.post('/api/factory/jobs/:jobId/cancel', async (req, res) => {
+  try {
+    const result = await cancelFactoryJob(req.params.jobId);
+    if (!result.ok) {
+      return jsonError(res, result.status || 500, 'Cannot cancel job', result.error);
+    }
+    res.json(result.job);
+  } catch (error) {
+    jsonError(res, 404, 'Job not found', error.message);
+  }
+});
+
+app.post('/api/factory/jobs/:jobId/retry', async (req, res) => {
+  try {
+    const existing = await readJob(req.params.jobId);
+    const validation = validateFactoryInput({
+      ...existing.input,
+      ...req.body
+    });
+    if (!validation.ok) {
+      return jsonError(res, 400, 'Invalid factory payload', validation.errors);
+    }
+    const job = await createFactoryJob({
+      ...validation.value,
+      retryOf: existing.id,
+      retryDepth: Number(existing.retryDepth || 0) + 1
+    });
+    executeFactoryJob(job.id, validation.value).catch(err => console.error(`❌ Factory retry error [${job.id}]:`, err.response?.data || err.message));
+    res.status(202).json(job);
+  } catch (error) {
+    jsonError(res, 404, 'Retry source job not found', error.message);
+  }
+});
+
+app.post('/api/factory/run', async (req, res) => {
+  const validation = validateFactoryInput(req.body || {});
+  try {
+    if (!validation.ok) {
+      return jsonError(res, 400, 'Invalid factory payload', validation.errors);
+    }
+    const job = await createFactoryJob(validation.value);
+    executeFactoryJob(job.id, validation.value).catch(err => console.error(`❌ Factory job error [${job.id}]:`, err.response?.data || err.message));
+    res.status(202).json(job);
+  } catch (error) {
+    jsonError(res, 500, 'Failed to start factory job', error.message);
   }
 });
 
@@ -642,11 +1301,24 @@ app.post('/api/automation/full-video', async (req, res) => {
   }
 });
 
-ensureRuntimeDirs()
-  .then(() => {
-    app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-  })
-  .catch(error => {
+async function startServer(port = PORT) {
+  await ensureRuntimeDirs();
+  return app.listen(port, () => console.log(`Server running on port ${port}`));
+}
+
+if (require.main === module) {
+  startServer().catch(error => {
     console.error('Failed to initialize runtime directories:', error);
     process.exit(1);
   });
+}
+
+module.exports = {
+  app,
+  startServer,
+  ensureRuntimeDirs,
+  validateFactoryInput,
+  createFactoryJob,
+  readJob,
+  listJobs
+};
