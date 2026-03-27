@@ -46,12 +46,12 @@ video -> clicks -> affiliate sale -> commission
 
 ### Frontend
 
-- single-page interface in [public/index.html](/D:/Antigravity_pinterest/creator-os-backend/public/index.html)
+- single-page interface in [public/index.html](public/index.html)
 - multi-module control panel for signals, scripts, publishing, evolution, archetypes, and portfolio
 
 ### Backend
 
-- Express server in [index.js](/D:/Antigravity_pinterest/creator-os-backend/index.js)
+- Express server in [index.js](index.js)
 - Anthropic proxy endpoint
 - automation endpoints for full video jobs
 - Render-ready deployment
@@ -169,7 +169,7 @@ GET /api/automation/jobs/:jobId
 
 ## Environment variables
 
-Use [`.env.example`](/D:/Antigravity_pinterest/creator-os-backend/.env.example) as the template.
+Use [`.env.example`](.env.example) as the template.
 
 Important variables:
 
@@ -220,7 +220,7 @@ http://localhost:3000/api/automation/status
 
 ## Render deployment
 
-The repository includes [render.yaml](/D:/Antigravity_pinterest/creator-os-backend/render.yaml).
+The repository includes [render.yaml](render.yaml).
 
 Recommended Render setup:
 
