@@ -536,6 +536,9 @@ function buildRenderArgs({ clipAssets, audioFilePath, outputFilePath, scenes }) 
     '-filter_complex', filterComplex,
     '-map', '[v]',
     '-c:v', 'libx264',
+    '-preset', 'ultrafast',
+    '-crf', '28',
+    '-threads', '2',
     '-y'
   ];
 
