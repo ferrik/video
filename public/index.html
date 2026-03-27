@@ -7881,31 +7881,31 @@ Reality rules: signals from actual user-provided data (Amazon URL, Google Trends
       }
 
       const res = job.resultPackage || {};
-      const packageUrl = \`/api/factory/jobs/\${job.id}/package.txt\`;
+      const packageUrl = `/api/factory/jobs/${job.id}/package.txt`;
 
-      container.innerHTML = \`
+      container.innerHTML = `
         <div class="card" style="border-left:2px solid var(--green)">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
             <div>
               <div style="font-size:11px;font-family:var(--m);color:var(--t4);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">Ready Package MVP</div>
-              <h3 style="font-size:18px;font-weight:800">\${res.title || 'Untitled Video'}</h3>
+              <h3 style="font-size:18px;font-weight:800">${res.title || 'Untitled Video'}</h3>
             </div>
-            <a href="\${packageUrl}" download="publish_package_\${job.id}.txt" class="btn bg bsm">📦 Download Package</a>
+            <a href="${packageUrl}" download="publish_package_${job.id}.txt" class="btn bg bsm">📦 Download Package</a>
           </div>
 
           <div style="display:grid;grid-template-columns:1fr;gap:14px">
-            \${res.videoUrl ? \`
+            ${res.videoUrl ? `
             <div style="background:var(--bg);border-radius:10px;overflow:hidden;border:1px solid var(--b1);aspect-ratio:9/16;max-height:400px;display:flex;justify-content:center;background:#000">
-               <video src="\${res.videoUrl}" controls style="height:100%;max-width:100%;"></video>
+               <video src="${res.videoUrl}" controls style="height:100%;max-width:100%;"></video>
             </div>
-            \` : \`\`}
+            ` : ``}
 
             <div style="background:var(--s2);padding:14px;border-radius:10px;border:1px solid var(--b1)">
               <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
                 <div style="font-size:10px;font-family:var(--m);color:var(--amber);font-weight:700">CAPTION / POST TEXT</div>
-                <button class="btn bx bsm" onclick="navigator.clipboard.writeText(\`\${res.caption} \${res.hashtags.join(' ')}\`);notify('Copied!','g')">Copy</button>
+                <button class="btn bx bsm" onclick="navigator.clipboard.writeText(\`${res.caption} ${res.hashtags.join(' ')}\`);notify('Copied!','g')">Copy</button>
               </div>
-              <div style="font-size:13px;line-height:1.7;white-space:pre-wrap;color:var(--t2)">\${res.caption} \n\n<span style="color:var(--blue)">\${(res.hashtags||[]).join(' ')}</span></div>
+              <div style="font-size:13px;line-height:1.7;white-space:pre-wrap;color:var(--t2)">${res.caption} \n\n<span style="color:var(--blue)">${(res.hashtags||[]).join(' ')}</span></div>
             </div>
 
             <div style="background:var(--s2);padding:14px;border-radius:10px;border:1px solid var(--b1)">
@@ -7913,38 +7913,38 @@ Reality rules: signals from actual user-provided data (Amazon URL, Google Trends
                 <div style="font-size:10px;font-family:var(--m);color:var(--amber);font-weight:700">METADATA</div>
               </div>
               <div style="font-size:12px;color:var(--t2);display:grid;grid-template-columns:1fr 1fr;gap:8px">
-                <div>Quality: <strong style="color:var(--green)">\${res.metadata?.quality || 'N/A'}</strong></div>
-                <div>Duration: <strong>\${res.metadata?.estimatedDurationSec || '?'}s</strong></div>
-                <div>Words: <strong>\${res.metadata?.wordCount || '?'}</strong></div>
-                <div>URL: <strong>\${res.affiliateLink || 'None'}</strong></div>
+                <div>Quality: <strong style="color:var(--green)">${res.metadata?.quality || 'N/A'}</strong></div>
+                <div>Duration: <strong>${res.metadata?.estimatedDurationSec || '?'}s</strong></div>
+                <div>Words: <strong>${res.metadata?.wordCount || '?'}</strong></div>
+                <div>URL: <strong>${res.affiliateLink || 'None'}</strong></div>
               </div>
-              <div style="margin-top:10px;font-size:11px;color:var(--t3);font-style:italic">"\${res.metadata?.hook || ''}"</div>
+              <div style="margin-top:10px;font-size:11px;color:var(--t3);font-style:italic">"${res.metadata?.hook || ''}"</div>
             </div>
 
             <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:10px">
-              \${(res.clips || []).map((c) => \`
+              ${(res.clips || []).map((c) => `
                 <div style="background:var(--bg);padding:10px;border-radius:8px;border:1px solid var(--b1)">
                   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-                    <span style="font-size:9px;font-weight:800;color:var(--blue)">SCENE \${c.scene_id}</span>
+                    <span style="font-size:9px;font-weight:800;color:var(--blue)">SCENE ${c.scene_id}</span>
                   </div>
-                  <div style="font-size:11px;color:var(--t1);margin-bottom:6px">Query: "\${c.query}"</div>
+                  <div style="font-size:11px;color:var(--t1);margin-bottom:6px">Query: "${c.query}"</div>
                   <div style="display:flex;justify-content:space-between;align-items:center">
-                    <div style="font-size:8px;font-family:var(--m);color:\${c.status === 'completed' ? 'var(--green)' : 'var(--red)'};font-style:italic">Status: \${c.status}</div>
-                    \${c.publicUrl ? \`<a href="\${c.publicUrl}" target="_blank" style="font-size:14px" title="Preview Clip">🎞</a>\` : ''}
+                    <div style="font-size:8px;font-family:var(--m);color:${c.status === 'completed' ? 'var(--green)' : 'var(--red)'};font-style:italic">Status: ${c.status}</div>
+                    ${c.publicUrl ? `<a href="${c.publicUrl}" target="_blank" style="font-size:14px" title="Preview Clip">🎞</a>` : ''}
                   </div>
                 </div>
-              \`).join('')}
+              `).join('')}
             </div>
           </div>
           
           <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--b1);display:flex;justify-content:space-between;align-items:center">
             <div style="font-size:10px;color:var(--t4);font-family:var(--m)">
-              \${res.publishNotes || 'Ready for publishing'}
+              ${res.publishNotes || 'Ready for publishing'}
             </div>
             <button class="btn bx bsm" onclick="runFactory()">Create another</button>
           </div>
         </div>
-      \`;
+      `;
     }
 
     function renderFactoryJobList(jobs) {
@@ -7960,18 +7960,18 @@ Reality rules: signals from actual user-provided data (Amazon URL, Google Trends
         const meta = getFactoryStatusMeta(j.status);
         const isActive = isFactoryActiveStatus(j.status);
         const createdAtDate = j.createdAt ? new Date(j.createdAt) : new Date();
-        return \`
-          <div onclick="refreshFactoryJob('\${j.id}')" style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:var(--bg);border:1px solid var(--b1);border-radius:8px;cursor:pointer;margin-bottom:6px;transition:0.1s hover">
+        return `
+          <div onclick="refreshFactoryJob('${j.id}')" style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:var(--bg);border:1px solid var(--b1);border-radius:8px;cursor:pointer;margin-bottom:6px;transition:0.1s hover">
             <div style="flex:1;overflow:hidden">
-              <div style="font-size:11px;font-weight:700;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">\${j.input?.topic || 'Untitled Job'}</div>
-              <div style="font-size:8px;font-family:var(--m);color:var(--t4)">\${createdAtDate.toLocaleTimeString()} · \${j.id.slice(0, 8)}</div>
+              <div style="font-size:11px;font-weight:700;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${j.input?.topic || 'Untitled Job'}</div>
+              <div style="font-size:8px;font-family:var(--m);color:var(--t4)">${createdAtDate.toLocaleTimeString()} · ${j.id.slice(0, 8)}</div>
             </div>
             <div style="display:flex;align-items:center;gap:6px">
-              \${isActive ? '<div class="spin" style="width:8px;height:8px;border-width:1px"></div>' : ''}
-              <div style="font-size:9px;font-weight:700;color:\${getFactoryToneColor(meta.tone)}">\${meta.label}</div>
+              ${isActive ? '<div class="spin" style="width:8px;height:8px;border-width:1px"></div>' : ''}
+              <div style="font-size:9px;font-weight:700;color:${getFactoryToneColor(meta.tone)}">${meta.label}</div>
             </div>
           </div>
-        \`;
+        `;
       }).join('');
     }
 
