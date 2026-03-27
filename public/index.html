@@ -7835,17 +7835,22 @@ Reality rules: signals from actual user-provided data (Amazon URL, Google Trends
           </div>
           
           <div style="display:flex;gap:4px;margin-bottom:14px;height:6px;background:var(--s2);border-radius:3px;overflow:hidden">
-            ${(FACTORY_AUTO.meta.steps || []).map(step => {
-              const state = job.progress?.steps?.[step.key]?.state || 'idle';
+            ${(FACTORY_AUTO.meta.steps || []).map((step, idx) => {
+              const cIdx = job.stepIndex || 0;
+              let state = 'idle';
+              if (['completed', 'requires_follow_up'].includes(job.status) || cIdx > idx + 1) state = 'done';
+              else if (cIdx === idx + 1) state = job.status === 'failed' ? 'error' : 'active';
               const stateMeta = getFactoryStepStateMeta(state);
               return `<div style="flex:1;background:${getFactoryToneColor(stateMeta.tone)};opacity:${state === 'active' ? 1 : (state === 'done' ? 0.8 : 0.2)}"></div>`;
             }).join('')}
           </div>
 
           <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(80px, 1fr));gap:6px">
-            ${(FACTORY_AUTO.meta.steps || []).map(step => {
-              const stepData = job.progress?.steps?.[step.key];
-              const state = stepData?.state || 'idle';
+            ${(FACTORY_AUTO.meta.steps || []).map((step, idx) => {
+              const cIdx = job.stepIndex || 0;
+              let state = 'idle';
+              if (['completed', 'requires_follow_up'].includes(job.status) || cIdx > idx + 1) state = 'done';
+              else if (cIdx === idx + 1) state = job.status === 'failed' ? 'error' : 'active';
               const stateMeta = getFactoryStepStateMeta(state);
               return `
                 <div style="padding:6px;border-radius:6px;background:var(--s2);text-align:center;border:1px solid ${state === 'active' ? getFactoryToneColor(stateMeta.tone) : 'transparent'}">
@@ -7875,7 +7880,7 @@ Reality rules: signals from actual user-provided data (Amazon URL, Google Trends
     function renderFactoryResult(job) {
       const container = document.getElementById('r-factory');
       if (!container) return;
-      if (!job || job.status !== 'completed') {
+      if (!job || !['completed', 'requires_follow_up'].includes(job.status)) {
         container.innerHTML = '';
         return;
       }
