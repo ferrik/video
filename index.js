@@ -759,14 +759,29 @@ function validateFactoryInput(input = {}) {
   const mode = String(input.mode || 'simple').trim() || 'simple';
   const renderMode = String(input.advanced?.renderMode || (input.dryRun ? 'dry' : 'live')).trim() || 'live';
 
+  const ALLOWED_MARKETS = ['AU', 'US', 'UK', 'CA', 'Global'];
+  const ALLOWED_PLATFORMS = ['TikTok', 'YouTube Shorts', 'Instagram Reels', 'Pinterest', 'Shorts', 'Reels', 'Instagram'];
+
   if (!topic) errors.push('Topic is required.');
+  if (topic.length < 5) errors.push('Topic must be at least 5 characters long for context.');
   if (topic.length > 180) errors.push('Topic must be 180 characters or less.');
   if (!product) errors.push('Product is required.');
+  if (product.length > 100) errors.push('Product name must be 100 characters or less.');
   if (!market) errors.push('Market is required.');
+  if (!ALLOWED_MARKETS.includes(market.toUpperCase()) && !ALLOWED_MARKETS.includes(market)) {
+    errors.push(`Market "${market}" is not supported. Use: ${ALLOWED_MARKETS.join(', ')}.`);
+  }
+  
   if (!platforms.length) errors.push('At least one platform is required.');
   if (platforms.length > 3) errors.push('No more than 3 platforms are allowed per run.');
+  
+  const invalidPlatforms = platforms.filter(p => !ALLOWED_PLATFORMS.includes(p) && !p.toLowerCase().includes('tiktok') && !p.toLowerCase().includes('short') && !p.toLowerCase().includes('reel'));
+  if (invalidPlatforms.length > 0) {
+    errors.push(`Unsupported platforms: ${invalidPlatforms.join(', ')}. Supported platforms: TikTok, YouTube Shorts, Instagram Reels, Pinterest.`);
+  }
+
   if (!Number.isFinite(durationSec) || durationSec < 6 || durationSec > 90) errors.push('Duration must be between 6 and 90 seconds.');
-  if (!Number.isFinite(scenesCount) || scenesCount < 1 || scenesCount > 8) errors.push('Scenes count must be between 1 and 8.');
+  if (!Number.isFinite(scenesCount) || scenesCount < 1 || scenesCount > 12) errors.push('Scenes count must be between 1 and 12.');
   if (!['simple', 'advanced'].includes(mode)) errors.push('Mode must be either "simple" or "advanced".');
   if (!['live', 'dry'].includes(renderMode)) errors.push('Render mode must be either "live" or "dry".');
 
@@ -986,6 +1001,10 @@ async function executeFactoryJob(jobId, input = {}) {
       .filter(token => token.startsWith('#'))
       .slice(0, 8);
 
+    const wordCount = (scriptPlan.full_voiceover || '').split(' ').length;
+    const estDuration = Math.round(wordCount / 2.5); // ~2.5 words per sec
+    const qualityScore = (scriptPlan.title?.length > 10 && scriptPlan.hook?.length > 10 && clipResult.assets?.length >= 2) ? 'HIGH' : 'STANDARD';
+
     const resultPackage = {
       signalBrief,
       videoUrl: renderResult?.publicUrl || null,
@@ -993,13 +1012,21 @@ async function executeFactoryJob(jobId, input = {}) {
       caption: scriptPlan.caption || '',
       hashtags,
       affiliateLink: publishPlan.output || null,
-      publishNotes: `Готово до ручної публікації на ${platform}.`,
+      publishNotes: `Ready for manual publishing on ${platform}. Target: ${input.market}.`,
       voiceUrl: voiceResult?.publicUrl || null,
+      metadata: {
+        wordCount,
+        estimatedDurationSec: estDuration,
+        scenesCount: scriptPlan.scenes?.length || 0,
+        quality: qualityScore,
+        hook: scriptPlan.hook
+      },
       clips: (clipResult.assets || []).map(asset => ({
         scene_id: asset.scene_id,
         query: asset.query,
         publicUrl: asset.publicUrl || null,
-        status: asset.status
+        status: asset.status,
+        duration: asset.duration_sec || 6
       }))
     };
 
@@ -1065,6 +1092,12 @@ function buildFactoryPackageText(job) {
     'AFFILIATE LINK / OUTPUT',
     result.affiliateLink || '—',
     '',
+    'METADATA',
+    `Quality: ${result.metadata?.quality || '—'}`,
+    `Est. Duration: ${result.metadata?.estimatedDurationSec || '—'}s (${result.metadata?.wordCount || 0} words)`,
+    `Scenes: ${result.metadata?.scenesCount || '—'}`,
+    `Hook: ${result.metadata?.hook || '—'}`,
+    '',
     'PUBLISH NOTES',
     result.publishNotes || '—',
     '',
@@ -1075,7 +1108,7 @@ function buildFactoryPackageText(job) {
     result.voiceUrl || '—',
     '',
     'CLIPS',
-    ...((result.clips || []).map(clip => `Scene ${clip.scene_id}: ${clip.query || '—'} -> ${clip.publicUrl || clip.status || '—'}`))
+    ...((result.clips || []).map(clip => `Scene ${clip.scene_id} (${clip.duration}s): [${clip.status}] ${clip.query || '—'} -> ${clip.publicUrl || '—'}`))
   ];
   return lines.join('\n');
 }
