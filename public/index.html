@@ -7882,6 +7882,7 @@ Reality rules: signals from actual user-provided data (Amazon URL, Google Trends
       if (!container) return;
       if (!job || !['completed', 'requires_follow_up'].includes(job.status)) {
         container.innerHTML = '';
+        container.classList.remove('on');
         return;
       }
 
@@ -7950,6 +7951,7 @@ Reality rules: signals from actual user-provided data (Amazon URL, Google Trends
           </div>
         </div>
       `;
+      container.classList.add('on');
     }
 
     function renderFactoryJobList(jobs) {
