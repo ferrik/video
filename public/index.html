@@ -4430,6 +4430,7 @@
           </div>
           
           <div id="f-status-container"></div>
+          <div class="res" id="r-factory"></div>
 
           <div class="g2" style="gap:12px">
             <div>
@@ -4507,7 +4508,6 @@
             <div class="spin"></div>
             <div class="ld-t" id="ld-factory-t">Orchestrating production...</div>
           </div>
-          <div class="res" id="r-factory"></div>
         </div>
 
         <!-- ═══════════════════════════════════════
@@ -7908,7 +7908,7 @@ Reality rules: signals from actual user-provided data (Amazon URL, Google Trends
             <div style="background:var(--s2);padding:14px;border-radius:10px;border:1px solid var(--b1)">
               <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
                 <div style="font-size:10px;font-family:var(--m);color:var(--amber);font-weight:700">CAPTION / POST TEXT</div>
-                <button class="btn bx bsm" onclick="navigator.clipboard.writeText(\`${res.caption} ${res.hashtags.join(' ')}\`);notify('Copied!','g')">Copy</button>
+                <button class="btn bx bsm" onclick="navigator.clipboard.writeText(this.dataset.txt);notify('Copied!','g')" data-txt="${(res.caption || '').replace(/"/g, '&quot;')} ${(res.hashtags||[]).join(' ')}">Copy</button>
               </div>
               <div style="font-size:13px;line-height:1.7;white-space:pre-wrap;color:var(--t2)">${res.caption} \n\n<span style="color:var(--blue)">${(res.hashtags||[]).join(' ')}</span></div>
             </div>
