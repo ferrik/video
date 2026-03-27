@@ -300,14 +300,29 @@ async function generateSignalBrief(input = {}) {
     'Keep the output concise, practical, and ready for script generation.'
   ].join(' ');
 
+  let scrapedIntel = '';
+  try {
+    const q = encodeURIComponent(`${topic} ${market}`);
+    const res = await axios.get(`https://www.reddit.com/search.json?q=${q}&sort=relevance&t=year&limit=5`, {
+      headers: { 'User-Agent': 'CreatorOS/1.0' }
+    });
+    if (res.data?.data?.children) {
+      const posts = res.data.data.children.map((c, i) => `${i+1}. ${c.data.title} (Upvotes: ${c.data.score})`);
+      scrapedIntel = '\n\nREAL MARKET SIGNALS (Reddit top posts):\n' + posts.join('\n');
+    }
+  } catch (e) {
+    console.warn('Scraping skipped/failed:', e.message);
+  }
+
   const user = [
     `Topic: ${topic}`,
     `Product: ${product}`,
     `Market: ${market}`,
     `Platforms: ${platforms}`,
-    'Schema:',
+    scrapedIntel,
+    '\nSchema:',
     '{"topic":"string","angle":"string","audience":"string","problem":"string","promise":"string","marketNote":"string"}'
-  ].join('\n');
+  ].filter(Boolean).join('\n');
 
   try {
     if (useAnthropic) {
@@ -636,11 +651,19 @@ async function syncJobToSupabase(job) {
   if (!sb) return { status: 'not_configured' };
 
   try {
-    const { error } = await sb.from('factory_jobs').upsert({
+    const payload = {
       id: job.id,
-      data: job,
+      topic: job.input?.topic || '',
+      market: job.input?.market || '',
+      status: job.status || 'queued',
+      progress: job.progress || 0,
+      video_url: job.resultPackage?.videoUrl || null,
+      error_message: job.error || null,
+      data: job, // full artifact
       updated_at: job.updatedAt || new Date().toISOString()
-    });
+    };
+    
+    const { error } = await sb.from('factory_jobs').upsert(payload, { onConflict: 'id' });
     if (error) throw error;
     return { status: 'synced' };
   } catch (error) {
