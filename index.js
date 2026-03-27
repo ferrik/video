@@ -518,7 +518,9 @@ function shellQuote(value) {
 
 function buildRenderArgs({ clipAssets, audioFilePath, outputFilePath, scenes }) {
   const clipInputs = clipAssets.flatMap(asset => ['-i', asset.filePath]);
-  const audioInput = ['-i', audioFilePath];
+  const hasAudio = Boolean(audioFilePath);
+  const audioInput = hasAudio ? ['-i', audioFilePath] : [];
+
   const filters = clipAssets.map((asset, index) => {
     const scene = scenes.find(item => item.scene_id === asset.scene_id) || {};
     const duration = Number(scene.duration_sec || asset.duration_sec || 6);
@@ -528,18 +530,26 @@ function buildRenderArgs({ clipAssets, audioFilePath, outputFilePath, scenes }) 
   const concatInputs = clipAssets.map((_, index) => `[v${index}]`).join('');
   const filterComplex = `${filters.join(';')};${concatInputs}concat=n=${clipAssets.length}:v=1:a=0[v]`;
 
-  return [
+  const args = [
     ...clipInputs,
     ...audioInput,
     '-filter_complex', filterComplex,
     '-map', '[v]',
-    '-map', `${clipAssets.length}:a`,
     '-c:v', 'libx264',
-    '-c:a', 'aac',
-    '-shortest',
-    '-y',
-    outputFilePath
+    '-y'
   ];
+
+  if (hasAudio) {
+    // map the audio file which is the last input (index = clipAssets.length)
+    args.push('-map', `${clipAssets.length}:a`, '-c:a', 'aac', '-shortest');
+  } else {
+    // explicitly say no audio
+    args.push('-an');
+  }
+
+  args.push(outputFilePath);
+  
+  return args;
 }
 
 async function isFfmpegAvailable() {
@@ -552,10 +562,10 @@ async function isFfmpegAvailable() {
 }
 
 async function renderVideoAsset({ jobId, clipAssets = [], audioFilePath, scenes = [], dryRun = false }) {
-  if (!clipAssets.length || !audioFilePath) {
+  if (!clipAssets.length) {
     return {
       status: 'blocked',
-      reason: 'Missing local clips or voice asset for rendering.'
+      reason: 'Missing local clips for rendering.'
     };
   }
 
