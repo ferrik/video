@@ -372,31 +372,43 @@ async function generateVoiceAsset({ jobId, text, voiceId = ELEVENLABS_VOICE_ID }
 
   const fileName = `${jobId}.mp3`;
   const filePath = path.join(AUDIO_DIR, fileName);
-  const response = await axios.post(
-    `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
-    {
-      text,
-      model_id: 'eleven_multilingual_v2'
-    },
-    {
-      headers: {
-        'xi-api-key': process.env.ELEVENLABS_API_KEY,
-        Accept: 'audio/mpeg',
-        'Content-Type': 'application/json'
+  try {
+    const response = await axios.post(
+      `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
+      {
+        text,
+        model_id: 'eleven_multilingual_v2'
       },
-      responseType: 'arraybuffer',
-      timeout: 120000
-    }
-  );
+      {
+        headers: {
+          'xi-api-key': process.env.ELEVENLABS_API_KEY,
+          Accept: 'audio/mpeg',
+          'Content-Type': 'application/json'
+        },
+        responseType: 'arraybuffer',
+        timeout: 120000
+      }
+    );
 
-  await saveBuffer(Buffer.from(response.data), filePath);
+    await saveBuffer(Buffer.from(response.data), filePath);
 
-  return {
-    status: 'completed',
-    provider: 'elevenlabs',
-    filePath,
-    publicUrl: `/runtime/audio/${fileName}`
-  };
+    return {
+      status: 'completed',
+      provider: 'elevenlabs',
+      filePath,
+      publicUrl: `/runtime/audio/${fileName}`
+    };
+  } catch (error) {
+    const errText = error.response?.data ? error.response.data.toString() : error.message;
+    console.error(`[ElevenLabs API Error]: ${errText}`);
+    return {
+      status: 'fallback',
+      provider: 'elevenlabs',
+      error: `Voice generation failed: ${errText.substring(0, 100)}`,
+      filePath: null,
+      publicUrl: null
+    };
+  }
 }
 
 function pickPexelsFile(videoFiles = []) {
