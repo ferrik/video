@@ -36,6 +36,17 @@ Creator OS is designed to run an AI content factory:
 - collect performance data
 - identify champions and clone what works
 
+## What's New in Factory Engine
+
+Recent updates have transformed Creator OS into a highly resilient, production-ready factory:
+
+1. **Resilient TTS Fallback Architecture**: The audio generation pipeline now includes an enterprise-grade failover system. 
+   - `try ElevenLabs -> catch (Rate Limit / 400) -> switch to OpenAI TTS -> continue`. 
+   - Operations never crash entirely due to third-party API limits.
+2. **Strict Job Validation & States**: Complex status management (`requires_follow_up`) ensures that even if video rendering is skipped (e.g. missing audio), all AI metadata (captions, hooks, clips) are gracefully preserved for manual assembly.
+3. **Market Intelligence Setup**: The framework was adapted to integrate live market signals (like scraped Reddit insights) rather than just static AI hallucinations.
+4. **Responsive UI**: The Factory Mode interface adapts perfectly to different viewport sizes and securely unmounts empty/hidden states.
+
 Revenue model:
 
 ```text
