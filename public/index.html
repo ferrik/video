@@ -4629,6 +4629,7 @@
                   <option>Перт (WA)</option>
                 </select>
               </div>
+              <div id="sig-context" style="font-family:var(--m);font-size:8px;color:var(--t3);margin-top:4px">Signals for: —</div>
               <div class="row" style="gap:6px">
                 <div class="badge" style="background:var(--amber-bg);border-color:var(--amber-bd);color:var(--amber)">⚠️
                   AI ДОПОВНЕНИЙ</div>
@@ -5759,6 +5760,12 @@
                 </div>
               </div>
               <div class="g2" style="gap:8px">
+                <div class="field"><label class="fl">Режим відео</label>
+                  <select id="vf-mode">
+                    <option value="text_silent" selected>Silent + Text (TikTok style)</option>
+                    <option value="voice">Voice + Text</option>
+                  </select>
+                </div>
                 <div class="field"><label class="fl">Тривалість відео</label>
                   <select id="vf-duration">
                     <option value="25">25 секунд (TikTok hook)</option>
@@ -7462,11 +7469,29 @@
       // Update city fields
       const fCity = document.getElementById('f-city');
       if (fCity && (!fCity._userEdited)) fCity.value = M.cities[0];
+      updateSignalFiltersFromState();
       // Update evolution city mutations
       updateEvoCityOptions();
       // Update champion variation city options
       updateChampCityOptions();
       notify(`${M.flag} Ринок змінено на ${M.name} · ${M.amazonDomain} · тег: ${M.tag}`, 'g');
+    }
+
+    function updateSignalFiltersFromState() {
+      const regionSelect = document.getElementById('sig-region');
+      const context = document.getElementById('sig-context');
+      const nicheSelect = document.getElementById('sig-niche');
+      if (regionSelect) {
+        regionSelect.innerHTML = [
+          `<option value="${MARKET.name}">${MARKET.name}</option>`,
+          ...MARKET.cities.map(city => `<option value="${city}">${city}</option>`)
+        ].join('');
+      }
+      if (context) {
+        const nicheLabel = nicheSelect?.selectedOptions?.[0]?.textContent || NICHE?.nameUa || '—';
+        const regionLabel = regionSelect?.value || MARKET.name;
+        context.textContent = `Signals for: ${MARKET.flag} ${MARKET.name} | ${nicheLabel} | ${regionLabel}`;
+      }
     }
 
     function updateEvoCityOptions() {
@@ -7760,7 +7785,9 @@
       const trendsQ = document.getElementById('sig-trends-q')?.value.trim() || '';
       const trendsDir = document.getElementById('sig-trends-dir')?.value || 'stable';
       const niche = document.getElementById('sig-niche')?.value || 'pest_au';
-      const region = document.getElementById('sig-region')?.value || MARKET.cities[0];
+      const region = document.getElementById('sig-region')?.value || MARKET.name;
+      updateSignalFiltersFromState();
+      console.log('REFRESH SIGNALS', { market: MARKET.code, niche, region });
       const mktContext = `Ринок: ${MARKET.name}. Currency: ${MARKET.currency}. Amazon: ${MARKET.amazonDomain}. Cities: ${MARKET.cityEn.join(', ')}. Pests: ${mktPests().join(', ')}.`;
 
       ld('signal', true, 'Аналізую сигнали з оцінкою реальності...');
@@ -7774,14 +7801,14 @@
         `Signal Intelligence with Reality Scoring. Each signal must have a reality_score: REAL inputs get 80-95%, AI-synthesized get 20-55%.
 Schema:{"signals":[{"id":number,"title":string,"source":string,"type":"product"|"trend"|"pain"|"seasonal","heat":"hot"|"warm"|"cool","why_ua":string,"product_name":string,"product_price":string,"profit_score":number,"hook_type":string,"persona":string,"urgency_days":number,"reality_score":number,"reality_type":"REAL"|"AI_AUGMENTED"|"SYNTHETIC","reality_note_ua":string,"verified_input":string|null}],"overall_market_ua":string}
 Reality rules: signals from actual user-provided data (Amazon URL, Google Trends check) → REAL (80-95%). AI-inferred seasonal/reddit signals → SYNTHETIC (20-50%). Mixed → AI_AUGMENTED (50-75%).`,
-        `Ніша: ${niche}. Region: ${region}. Real inputs provided: ${JSON.stringify(realInputs)}. Генерувати 8-10 signals total (mix of real-verified and AI-augmented).`,
+        `Ніша: ${niche}. Region: ${region}. ${mktContext} Real inputs provided: ${JSON.stringify(realInputs)}. Генерувати 8-10 signals total (mix of real-verified and AI-augmented).`,
         {
           signals: [
-            { id: 1, title: amzProd || 'Raid Max Barrier — top seller this week', source: 'Amazon Best Sellers', type: 'product', heat: 'hot', why_ua: 'Підтверджено як #1 продукт тижня в Amazon AU — реальний сигнал попиту', product_name: 'Raid Max Barrier', product_price: 'AU$18.99', profit_score: 94, hook_type: 'authority_leak', persona: 'homeowner', urgency_days: 7, reality_score: 92, reality_type: 'REAL', reality_note_ua: 'Ти перевірив особисто на amazon.com.au — достовірні дані', verified_input: amzProd || null },
-            { id: 2, title: trendsQ || 'spider control sydney', source: 'Google Trends', type: 'trend', heat: 'hot', why_ua: trendsDir === 'rising_fast' ? 'Ти підтвердив що тренд різко зростає — реальний сигнал' : 'Підтверджений тренд з Google Trends', product_name: 'Raid Barrier', product_price: 'AU$16.99', profit_score: 88, hook_type: 'fear_trigger', persona: 'homeowner', urgency_days: 5, reality_score: 87, reality_type: 'REAL', reality_note_ua: 'Підтверджено особисто в trends.google.com', verified_input: trendsQ || null },
-            { id: 3, title: 'Cockroach season QLD — typical March spike', source: 'AI Seasonal Model', type: 'seasonal', heat: 'warm', why_ua: 'AI-прогноз на основі сезонних патернів. НЕ верифіковано реальними даними.', product_name: 'Mortein Crawling', product_price: 'AU$12.99', profit_score: 72, hook_type: 'stats_shock', persona: 'renter', urgency_days: 14, reality_score: 38, reality_type: 'SYNTHETIC', reality_note_ua: '⚠️ Синтетичний сигнал — перевір у Google Trends перед використанням', verified_input: null },
-            { id: 4, title: 'Renters pest complaints — r/AusRenters', source: 'AI Reddit Simulation', type: 'pain', heat: 'warm', why_ua: 'AI симулює Reddit активність. Перевір реальні пости на reddit.com/r/australia.', product_name: 'Pea Beu Spray', product_price: 'AU$11.49', profit_score: 65, hook_type: 'curiosity_gap', persona: 'renter', urgency_days: 7, reality_score: 28, reality_type: 'SYNTHETIC', reality_note_ua: '⚠️ UNVERIFIED — Evolution Engine ігноруватиме цей сигнал. Перевір Reddit вручну.', verified_input: null },
-          ], overall_market_ua: '2 реальні сигнали підтверджено. Raid Max + spider trends = сильна основа для контенту цього тижня.'
+            { id: 1, title: amzProd || `${NICHE.products?.[0] || 'Top product'} — top seller this week`, source: 'Amazon Best Sellers', type: 'product', heat: 'hot', why_ua: `Підтверджено як #1 продукт тижня в ${MARKET.amazonDomain} — реальний сигнал попиту`, product_name: NICHE.products?.[0] || 'Top product', product_price: `${MARKET.currency}18.99`, profit_score: 94, hook_type: 'authority_leak', persona: 'homeowner', urgency_days: 7, reality_score: 92, reality_type: 'REAL', reality_note_ua: `Ти перевірив особисто на ${MARKET.amazonDomain} — достовірні дані`, verified_input: amzProd || null },
+            { id: 2, title: trendsQ || `${mktPests()[0] || 'pest'} control ${MARKET.cityEn[0]}`, source: 'Google Trends', type: 'trend', heat: 'hot', why_ua: trendsDir === 'rising_fast' ? 'Ти підтвердив що тренд різко зростає — реальний сигнал' : 'Підтверджений тренд з Google Trends', product_name: NICHE.products?.[0] || 'Top product', product_price: `${MARKET.currency}16.99`, profit_score: 88, hook_type: 'fear_trigger', persona: 'homeowner', urgency_days: 5, reality_score: 87, reality_type: 'REAL', reality_note_ua: 'Підтверджено особисто в trends.google.com', verified_input: trendsQ || null },
+            { id: 3, title: `${(mktPests()[1] || 'pest').charAt(0).toUpperCase() + (mktPests()[1] || 'pest').slice(1)} season ${region} — typical spike`, source: 'AI Seasonal Model', type: 'seasonal', heat: 'warm', why_ua: 'AI-прогноз на основі сезонних патернів. НЕ верифіковано реальними даними.', product_name: NICHE.products?.[1] || 'Seasonal product', product_price: `${MARKET.currency}12.99`, profit_score: 72, hook_type: 'stats_shock', persona: 'renter', urgency_days: 14, reality_score: 38, reality_type: 'SYNTHETIC', reality_note_ua: '⚠️ Синтетичний сигнал — перевір у Google Trends перед використанням', verified_input: null },
+            { id: 4, title: `Renters ${NICHE.id} complaints — ${MARKET.code} forum`, source: 'AI Reddit Simulation', type: 'pain', heat: 'warm', why_ua: 'AI симулює Reddit активність. Перевір реальні пости вручну.', product_name: NICHE.products?.[2] || 'Forum pain product', product_price: `${MARKET.currency}11.49`, profit_score: 65, hook_type: 'curiosity_gap', persona: 'renter', urgency_days: 7, reality_score: 28, reality_type: 'SYNTHETIC', reality_note_ua: '⚠️ UNVERIFIED — Evolution Engine ігноруватиме цей сигнал. Перевір Reddit вручну.', verified_input: null },
+          ], overall_market_ua: `2 реальні сигнали підтверджено для ${MARKET.name}. Market focus: ${region} · ${NICHE.nameUa}.`
         }
       );
 
@@ -9597,7 +9624,14 @@ Rules:
     }
 
     /* ── AGENT 2: VOICE (ElevenLabs) ── */
-    async function agentVoice(fullScript, voiceStyle) {
+    async function agentVoice(fullScript, voiceStyle, mode = 'voice') {
+      if (mode !== 'voice') {
+        return {
+          status: 'skipped',
+          url: null,
+          note: 'Voice вимкнено. Режим Silent + Text використовує only text overlay + music.'
+        };
+      }
       try {
         const resp = await fetch('/api/automation/tools/voice-preview', {
           method: 'POST',
@@ -9642,12 +9676,19 @@ Rules:
     }
 
     /* ── AGENT 4: CAPCUT ASSEMBLY KIT ── */
-    function agentEditorKit(scriptData, visualData, voiceData, topic, duration) {
+    function agentEditorKit(scriptData, visualData, voiceData, topic, duration, mode = 'voice') {
       const affLink = mktUrl(document.getElementById('vf-asin')?.value || 'B08EXAMPLE');
+      const isSilentMode = mode !== 'voice';
       return {
         steps: [
           { n: 1, title: 'Відкрий CapCut → Новий проект → 9:16', sub: 'Налаштуй: 1080×1920, 30fps' },
-          { n: 2, title: 'Завантаж MP3 голос', sub: voiceData?.status === 'ok' ? '✅ MP3 готовий — натисни "Завантажити MP3" нижче' : 'Запиши голос сам або через ElevenLabs: ' + affLink },
+          {
+            n: 2,
+            title: isSilentMode ? 'Пропусти voiceover (silent режим)' : 'Завантаж MP3 голос',
+            sub: isSilentMode
+              ? 'Додай трендовий sound/ambient без вокалу (гучність 10-16%).'
+              : (voiceData?.status === 'ok' ? '✅ MP3 готовий — натисни "Завантажити MP3" нижче' : 'Запиши голос сам або через ElevenLabs: ' + affLink)
+          },
           {
             n: 3, title: 'Додай кліпи у CapCut за таймкодами',
             sub: (scriptData?.scenes || []).map(s => `${s.label} [${s.start_s}s–${s.end_s}s]: ${s.visual_keywords?.join(', ') || '—'}`).join(' | ')
@@ -9660,7 +9701,13 @@ Rules:
             n: 5, title: 'Додай субтитри — CapCut Auto Captions або вручну',
             sub: 'Text → Auto Captions (якщо є голос) або скопіюй SRT текст нижче'
           },
-          { n: 6, title: 'Музика: CapCut Library → "Trending" → без вокалу', sub: 'Гучність: 8-12% — фон, не заглушає голос' },
+          {
+            n: 6,
+            title: 'Музика: CapCut Library → "Trending" → без вокалу',
+            sub: isSilentMode
+              ? 'Silent mode: 14-20% + текст великий/контрастний (3-6 слів).'
+              : 'Гучність: 8-12% — фон, не заглушає голос'
+          },
           {
             n: 7, title: 'Zoom cuts кожні 2-3 секунди',
             sub: 'Виділи кліп → Effects → Zoom → 1.05-1.1x. Різкі переходи = вищий watch time'
@@ -9685,6 +9732,8 @@ Rules:
       const city = document.getElementById('vf-city')?.value || MARKET.cityEn[0];
       const duration = +document.getElementById('vf-duration')?.value || 30;
       const voice = document.getElementById('vf-voice')?.value || 'friendly';
+      const mode = document.getElementById('vf-mode')?.value || 'text_silent';
+      const isVoiceMode = mode === 'voice';
 
       const btn = document.getElementById('vf-run-btn'); btn.disabled = true;
       vfResetSteps();
@@ -9697,9 +9746,9 @@ Rules:
 
       /* ─ AGENT 2: VOICE ─ */
       vfStep(2, 'active');
-      ld('videofactory', true, '🎙 Voice Agent — генерую озвучку...');
-      const voiceData = await agentVoice(scriptData?.full_script || topic, voice);
-      vfStep(2, voiceData?.status === 'ok' ? 'done' : 'done');
+      ld('videofactory', true, isVoiceMode ? '🎙 Voice Agent — генерую озвучку...' : '🔇 Silent mode — пропускаю voice, готую text-first монтаж...');
+      const voiceData = await agentVoice(scriptData?.full_script || topic, voice, mode);
+      vfStep(2, 'done');
 
       /* ─ AGENT 3: VISUALS ─ */
       vfStep(3, 'active');
@@ -9711,7 +9760,7 @@ Rules:
       vfStep(4, 'active');
       ld('videofactory', true, '✂️ Editor Agent — будую CapCut інструкцію...');
       await new Promise(r => setTimeout(r, 400));
-      const editorKit = agentEditorKit(scriptData, visualData, voiceData, topic, duration);
+      const editorKit = agentEditorKit(scriptData, visualData, voiceData, topic, duration, mode);
       vfStep(4, 'done');
       vfStep(5, 'done');
 
@@ -9731,6 +9780,7 @@ Rules:
         <div style="font-size:15px;font-weight:800;margin-bottom:4px">${topic.slice(0, 65)}</div>
         <div style="display:flex;gap:10px;font-family:var(--m);font-size:9px;color:var(--t3);flex-wrap:wrap">
           <span>⏱ ${duration}с</span>
+          <span style="color:var(--blue)">${isVoiceMode ? 'Voice + Text' : 'Silent + Text (default)'}</span>
           <span style="color:var(--green)">CTR: ${scriptData?.estimated_ctr || '~10%'}</span>
           <span>${MARKET.flag} ${MARKET.name}</span>
           <span style="${scriptData?.shadowban_safe ? 'color:var(--green)' : 'color:var(--red)'}">
@@ -9785,16 +9835,16 @@ Rules:
   <div class="agent-card">
     <div class="agent-head">
       <span class="agent-icon">🎙</span>
-      <div><div class="agent-name">Voice Agent</div><div class="agent-sub">ElevenLabs</div></div>
-      <div class="agent-status" style="background:${voiceData?.status === 'ok' ? 'var(--green-bg)' : 'var(--amber-bg)'};border-color:${voiceData?.status === 'ok' ? 'var(--green-bd)' : 'var(--amber-bd)'};color:${voiceData?.status === 'ok' ? 'var(--green)' : 'var(--amber)'}">
-        ${voiceData?.status === 'ok' ? '✅ MP3 готовий' : voiceData?.status === 'no_key' ? '⚡ Потрібен ключ' : '❌ Помилка'}
+      <div><div class="agent-name">Voice Agent</div><div class="agent-sub">${isVoiceMode ? 'ElevenLabs' : 'Silent + Text mode'}</div></div>
+      <div class="agent-status" style="background:${voiceData?.status === 'ok' || voiceData?.status === 'skipped' ? 'var(--green-bg)' : 'var(--amber-bg)'};border-color:${voiceData?.status === 'ok' || voiceData?.status === 'skipped' ? 'var(--green-bd)' : 'var(--amber-bd)'};color:${voiceData?.status === 'ok' || voiceData?.status === 'skipped' ? 'var(--green)' : 'var(--amber)'}">
+        ${voiceData?.status === 'ok' ? '✅ MP3 готовий' : voiceData?.status === 'skipped' ? '✅ Voice пропущено' : voiceData?.status === 'no_key' ? '⚡ Потрібен ключ' : '❌ Помилка'}
       </div>
     </div>
-    ${voiceData?.status === 'ok' && voiceData?.url ?
-          `<audio controls style="width:100%;margin-bottom:8px" src="${voiceData.url}"></audio>
+    ${voiceData?.status === 'ok' && voiceData?.url
+          ? `<audio controls style="width:100%;margin-bottom:8px" src="${voiceData.url}"></audio>
        <a href="${voiceData.url}" download="voice_${Date.now()}.mp3" class="btn bg" style="width:100%;display:block;text-align:center;text-decoration:none;padding:8px">⬇ Завантажити MP3</a>`
           : `<div style="font-family:var(--m);font-size:9px;color:var(--t3);margin-bottom:8px">${voiceData?.note || 'Немає ключа'}</div>
-       <a href="https://elevenlabs.io" target="_blank" class="amz-btn">🔗 Отримати ElevenLabs ключ (безкоштовно)</a>`}
+       ${voiceData?.status === 'skipped' ? '' : '<a href="https://elevenlabs.io" target="_blank" class="amz-btn">🔗 Отримати ElevenLabs ключ (безкоштовно)</a>'}`}
     <div style="margin-top:10px">
       <div style="font-family:var(--m);font-size:8px;color:var(--t4);margin-bottom:5px;text-transform:uppercase">ПОВНИЙ СКРИПТ ДЛЯ ОЗВУЧКИ</div>
       <div style="background:var(--bg);border:1px solid var(--b1);border-radius:6px;padding:9px;font-size:11px;line-height:1.8;white-space:pre-line">${scriptData?.full_script || '—'}</div>
@@ -9841,10 +9891,10 @@ Rules:
   </div>`;
 
       // Store for download
-      window._vfLastData = { topic, scriptData, visualData, voiceData, editorKit };
+      window._vfLastData = { topic, scriptData, visualData, voiceData, editorKit, mode };
 
       showR('videofactory', html_out);
-      notify(`✅ Video Factory готовий · ${(scriptData?.scenes || []).length} сцен · ${voiceData?.status === 'ok' ? 'MP3 ✓' : 'без MP3'}`, 'g');
+      notify(`✅ Video Factory готовий · ${(scriptData?.scenes || []).length} сцен · ${isVoiceMode ? (voiceData?.status === 'ok' ? 'MP3 ✓' : 'без MP3') : 'Silent+Text'}`, 'g');
     }
 
     function vfToPublish(topic, product) {
@@ -9992,6 +10042,7 @@ Rules:
       if (vft && !vft.value) vft.placeholder = N.topics[0] + ' ' + ((MARKET?.cityEn || ['AU'])[0]);
       const vfp = document.getElementById('vf-product');
       if (vfp && !vfp.value) vfp.placeholder = N.products[0];
+      updateSignalFiltersFromState();
       notify(N.icon + ' Ніша: ' + N.nameUa + ' · Категорія Amazon: ' + N.amazonCategory, 'a');
       updateRevenueProjection();
     }
@@ -10307,6 +10358,9 @@ Rules: Natural spoken language, no "um/ah", direct, energetic. Include ONE nativ
     document.addEventListener('DOMContentLoaded', () => {
       buildНішаBar();
       applyНіша();
+      updateSignalFiltersFromState();
+      document.getElementById('sig-niche')?.addEventListener('change', updateSignalFiltersFromState);
+      document.getElementById('sig-region')?.addEventListener('change', updateSignalFiltersFromState);
       renderUsage();
     });
 
