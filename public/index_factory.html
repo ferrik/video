@@ -274,10 +274,11 @@
           headers: {'Content-Type': 'application/json'},
           body: JSON.stringify({ count: 5, market: el('f-market').value || 'AU' })
         });
-        if(!res.ok) throw new Error('Generation failed');
+        const respData = await res.json();
+        if(!res.ok) throw new Error(respData.error || 'Generation failed');
         await loadQueue();
       } catch (e) {
-        alert('Failed to generate. Ensure ANTHROPIC_API_KEY is set in .env');
+        alert('Помилка: ' + e.message);
       } finally {
         el('btn-gen-q').innerHTML = '🔄 Generate (API)';
         el('btn-gen-q').disabled = false;

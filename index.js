@@ -1516,12 +1516,21 @@ app.post('/api/factory/queue/generate', async (req, res) => {
 
   try {
     let parsed;
-    if (useAnthropic) {
-      const data = await callAnthropic(system, [{ role: 'user', content: user }], ANTHROPIC_MODEL, 2000);
-      parsed = JSON.parse(cleanClaudeText(data));
-    } else {
-      const content = await callOpenAI([{ role: 'system', content: system }, { role: 'user', content: user }]);
-      parsed = JSON.parse(content);
+    try {
+      if (useAnthropic) {
+        const data = await callAnthropic(system, [{ role: 'user', content: user }], ANTHROPIC_MODEL, 2000);
+        parsed = JSON.parse(cleanClaudeText(data));
+      } else {
+        throw new Error('Anthropic skipped');
+      }
+    } catch (anthropicErr) {
+      console.log('Anthropic failed/skipped, trying OpenAI...', anthropicErr.message);
+      if (useOpenAI) {
+        const content = await callOpenAI([{ role: 'system', content: system }, { role: 'user', content: user }]);
+        parsed = JSON.parse(content);
+      } else {
+        throw new Error('All AI providers failed. Check your API keys or billing limits.');
+      }
     }
 
     const scenarios = (parsed.scenarios || []).slice(0, count).map((s, i) => ({
