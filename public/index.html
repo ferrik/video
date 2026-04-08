@@ -7706,7 +7706,10 @@ Reality rules: signals from actual user-provided data (Amazon URL, Google Trends
     async function runFactory() {
       const topic = document.getElementById('f-topic')?.value.trim();
       const product = document.getElementById('f-product')?.value.trim();
-      const market = document.getElementById('f-market')?.value.trim() || MARKET.name;
+      // Fix: use MARKET.code (e.g. "AU") not MARKET.name ("Australia") — backend validates against code list
+      const marketRaw = document.getElementById('f-market')?.value.trim();
+      const market = marketRaw || MARKET.code || 'AU';
+      console.log('[Factory] market=', market, '| niche=', NICHE?.id, '| MARKET.code=', MARKET.code);
       const platforms = document.getElementById('f-platforms')?.value.trim();
       const durationSec = +document.getElementById('f-duration')?.value || 24;
       const scenesCount = +document.getElementById('f-scenes')?.value || 4;

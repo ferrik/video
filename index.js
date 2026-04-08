@@ -51,6 +51,7 @@ const AUDIO_DIR = path.join(RUNTIME_DIR, 'audio');
 const CLIP_DIR = path.join(RUNTIME_DIR, 'clips');
 const JOB_DIR = path.join(RUNTIME_DIR, 'jobs');
 const RENDER_DIR = path.join(RUNTIME_DIR, 'renders');
+const QUEUE_DIR = path.join(RUNTIME_DIR, 'queue');
 
 app.use(cors());
 app.use(express.json({ limit: '2mb' }));
@@ -67,7 +68,7 @@ const limiter = rateLimit({
 });
 
 app.use('/api/', limiter);
-app.use(express.static('public'));
+app.use(express.static('public', { index: false }));
 app.use('/runtime', express.static(RUNTIME_DIR));
 
 function uid(prefix = 'job') {
@@ -80,7 +81,8 @@ async function ensureRuntimeDirs() {
     fs.mkdir(AUDIO_DIR, { recursive: true }),
     fs.mkdir(CLIP_DIR, { recursive: true }),
     fs.mkdir(JOB_DIR, { recursive: true }),
-    fs.mkdir(RENDER_DIR, { recursive: true })
+    fs.mkdir(RENDER_DIR, { recursive: true }),
+    fs.mkdir(QUEUE_DIR, { recursive: true })
   ]);
 }
 
@@ -231,7 +233,10 @@ async function generateScriptPlan(input) {
   const system = [
     'You generate short-form video plans for a fully automated content pipeline.',
     'Return only valid JSON.',
-    'Use concise scene-by-scene voiceover, screen text, and search queries for stock clips.'
+    'Use concise scene-by-scene voiceover, screen text, and search queries for stock clips.',
+    'IMPORTANT: on_screen_text must be MAX 6 WORDS — bold, punchy, no full sentences.',
+    'Example on_screen_text: "Why spiders enter your home" or "No chemicals needed".',
+    'The on_screen_text will be displayed as a large text caption burned directly into the video frame.'
   ].join(' ');
 
   const user = [
@@ -240,6 +245,7 @@ async function generateScriptPlan(input) {
     `Platform: ${platform}`,
     `Total duration: ${durationSec} seconds`,
     `Scene count: ${scenesCount}`,
+    'Rules: on_screen_text = max 6 words, short punchy hook per scene, like TikTok captions.',
     'Schema:',
     '{"title":"string","hook":"string","cta":"string","caption":"string","full_voiceover":"string","scenes":[{"scene_id":1,"voiceover":"string","on_screen_text":"string","search_query":"string","duration_sec":6}]}'
   ].join('\n');
@@ -516,6 +522,17 @@ function shellQuote(value) {
   return `"${String(value).replace(/"/g, '\\"')}"`;
 }
 
+// Escape text for FFmpeg drawtext filter
+function escapeDrawtext(text) {
+  return String(text || '')
+    .replace(/\\/g, '\\\\')
+    .replace(/'/g, "\\\\'")  // escape single quotes
+    .replace(/:/g, '\\\\:')  // escape colons
+    .replace(/[\r\n]+/g, ' ')  // remove newlines
+    .trim()
+    .slice(0, 80);  // max 80 chars safety
+}
+
 function buildRenderArgs({ clipAssets, audioFilePath, outputFilePath, scenes }) {
   const clipInputs = clipAssets.flatMap(asset => ['-i', asset.filePath]);
   const hasAudio = Boolean(audioFilePath);
@@ -524,7 +541,30 @@ function buildRenderArgs({ clipAssets, audioFilePath, outputFilePath, scenes }) 
   const filters = clipAssets.map((asset, index) => {
     const scene = scenes.find(item => item.scene_id === asset.scene_id) || {};
     const duration = Number(scene.duration_sec || asset.duration_sec || 6);
-    return `[${index}:v]trim=duration=${duration},setpts=PTS-STARTPTS,scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,format=yuv420p[v${index}]`;
+
+    // Base video processing
+    let f = `[${index}:v]trim=duration=${duration},setpts=PTS-STARTPTS,scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,format=yuv420p`;
+
+    // Add text overlay if on_screen_text exists
+    const rawText = scene.on_screen_text || '';
+    if (rawText) {
+      const safeText = escapeDrawtext(rawText);
+      // White bold text, bottom-center, semi-transparent dark background box
+      f += `,drawtext=text='${safeText}'`
+        + `:fontsize=68`
+        + `:fontcolor=white`
+        + `:x=(w-text_w)/2`
+        + `:y=h-text_h-100`
+        + `:box=1`
+        + `:boxcolor=black@0.55`
+        + `:boxborderw=24`
+        + `:shadowcolor=black@0.8`
+        + `:shadowx=2`
+        + `:shadowy=2`;
+    }
+
+    f += `[v${index}]`;
+    return f;
   });
 
   const concatInputs = clipAssets.map((_, index) => `[v${index}]`).join('');
@@ -538,7 +578,7 @@ function buildRenderArgs({ clipAssets, audioFilePath, outputFilePath, scenes }) 
     '-c:v', 'libx264',
     '-preset', 'ultrafast',
     '-crf', '28',
-    '-threads', '2',
+    '-threads', '1',
     '-y'
   ];
 
@@ -1398,6 +1438,123 @@ app.post('/api/automation/full-video', async (req, res) => {
     const errorDetails = error.response?.data || error.message;
     console.error(`❌ Full automation error [Job ${jobId}]:`, errorDetails);
     jsonError(res, 500, 'Failed to run full automation', errorDetails);
+  }
+});
+
+/* ── / route ── */
+app.get('/', (_req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index_factory.html'));
+});
+
+/* ── /legacy route ── */
+app.get('/legacy', (_req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+/* ── QUEUE HELPERS ── */
+const QUEUE_FILE = path.join(QUEUE_DIR, 'queue.json');
+
+async function readQueue() {
+  try {
+    const raw = await fs.readFile(QUEUE_FILE, 'utf8');
+    return JSON.parse(raw);
+  } catch { return []; }
+}
+
+async function writeQueue(scenarios) {
+  await fs.mkdir(QUEUE_DIR, { recursive: true });
+  await fs.writeFile(QUEUE_FILE, JSON.stringify(scenarios, null, 2));
+}
+
+/* ── GET /api/factory/queue ── */
+app.get('/api/factory/queue', async (_req, res) => {
+  try {
+    const scenarios = await readQueue();
+    res.json({ scenarios });
+  } catch (error) {
+    jsonError(res, 500, 'Failed to read queue', error.message);
+  }
+});
+
+/* ── POST /api/factory/queue/generate ── */
+app.post('/api/factory/queue/generate', async (req, res) => {
+  const market = String(req.body?.market || 'AU').toUpperCase();
+  const niche = String(req.body?.niche || 'pest control');
+  const count = Math.min(Number(req.body?.count || 10), 20);
+
+  const useAnthropic = !!process.env.ANTHROPIC_API_KEY;
+  const useOpenAI = !!process.env.OPENAI_API_KEY;
+
+  if (!useAnthropic && !useOpenAI) {
+    // FALLBACK IF NO KEYS ARE SET
+    const dummyScenarios = [
+      { id: uid('scenario'), topic: 'Spider season prep', product: 'Raid Max AU$18', hook: 'Why AU renters need this now', market, score: 85, status: 'pending', createdAt: new Date().toISOString() },
+      { id: uid('scenario'), topic: 'Cockroach gel trick', product: 'Yates Gel AU$12', hook: 'The $12 trick landlords hate', market, score: 92, status: 'pending', createdAt: new Date().toISOString() },
+      { id: uid('scenario'), topic: 'Ants in kitchen', product: 'Ant Rid AU$9', hook: 'Stop ants in 5 minutes', market, score: 71, status: 'pending', createdAt: new Date().toISOString() }
+    ];
+    await writeQueue(dummyScenarios);
+    return res.json({ scenarios: dummyScenarios, count: dummyScenarios.length });
+  }
+
+  const MARKET_CONTEXTS = {
+    AU: { name: 'Australia', currency: 'AU$', amazon: 'amazon.com.au', cities: ['Sydney','Melbourne','Brisbane','Perth'] },
+    US: { name: 'United States', currency: '$', amazon: 'amazon.com', cities: ['New York','Los Angeles','Chicago','Houston'] },
+    UK: { name: 'United Kingdom', currency: '£', amazon: 'amazon.co.uk', cities: ['London','Manchester','Birmingham','Leeds'] },
+    CA: { name: 'Canada', currency: 'CA$', amazon: 'amazon.ca', cities: ['Toronto','Vancouver','Calgary','Montreal'] },
+    Global: { name: 'Global', currency: '$', amazon: 'amazon.com', cities: ['London','New York','Sydney','Toronto'] },
+  };
+  const mCtx = MARKET_CONTEXTS[market] || MARKET_CONTEXTS['Global'];
+
+  const system = 'You are a content strategy AI for short-form video affiliate marketing. Return only valid JSON.';
+  const user = [
+    `Generate ${count} unique video scenario ideas for the ${niche} niche targeting the ${mCtx.name} market.`,
+    `Cities: ${mCtx.cities.join(', ')}. Amazon: ${mCtx.amazon}. Currency: ${mCtx.currency}.`,
+    'For each scenario provide: topic (short punchy title), product (specific product name + price), hook (first sentence), score (0-100 based on CTR potential/seasonality/competition).',
+    'Vary the score realistically. High score=75-90, medium=55-74, low=35-54.',
+    'Schema: {"scenarios":[{"topic":"string","product":"string","hook":"string","market":"string","score":number,"scoreBreakdown":{"ctr":number,"competition":number,"product":number,"geo":number}}]}'
+  ].join(' ');
+
+  try {
+    let parsed;
+    if (useAnthropic) {
+      const data = await callAnthropic(system, [{ role: 'user', content: user }], ANTHROPIC_MODEL, 2000);
+      parsed = JSON.parse(cleanClaudeText(data));
+    } else {
+      const content = await callOpenAI([{ role: 'system', content: system }, { role: 'user', content: user }]);
+      parsed = JSON.parse(content);
+    }
+
+    const scenarios = (parsed.scenarios || []).slice(0, count).map((s, i) => ({
+      id: uid('scenario'),
+      topic: s.topic || `${niche} tip ${i + 1}`,
+      product: s.product || 'affiliate product',
+      hook: s.hook || '',
+      market,
+      score: Number(s.score) || 60,
+      scoreBreakdown: s.scoreBreakdown || {},
+      status: 'pending',
+      createdAt: new Date().toISOString()
+    }));
+
+    await writeQueue(scenarios);
+    res.json({ scenarios, count: scenarios.length });
+  } catch (error) {
+    console.error('Queue generation error:', error.message);
+    jsonError(res, 500, 'Failed to generate queue', error.message);
+  }
+});
+
+/* ── PATCH /api/factory/queue/:scenarioId ── */
+app.patch('/api/factory/queue/:scenarioId', async (req, res) => {
+  try {
+    const scenarios = await readQueue();
+    const idx = scenarios.findIndex(s => s.id === req.params.scenarioId);
+    if (idx === -1) return jsonError(res, 404, 'Scenario not found');
+    scenarios[idx] = { ...scenarios[idx], ...req.body, id: scenarios[idx].id };
+    await writeQueue(scenarios);
+    res.json(scenarios[idx]);
+  } catch (error) {
+    jsonError(res, 500, 'Failed to update scenario', error.message);
   }
 });
 

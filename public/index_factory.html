@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Creator OS — Factory Mode</title>
+  <style>
+    :root {
+      --bg: #0b0914; --s1: #151226; --s2: #1e1a36;
+      --t1: #f8f8fb; --t2: #c4b5fd; --t3: #8b5cf6; --t4: #4c1d95;
+      --b1: rgba(139, 92, 246, 0.2); --b2: rgba(139, 92, 246, 0.4);
+      --green: #10b981; --green-bg: rgba(16, 185, 129, 0.1); --green-bd: rgba(16, 185, 129, 0.3);
+      --amber: #f59e0b; --amber-bg: rgba(245, 158, 11, 0.1); --amber-bd: rgba(245, 158, 11, 0.3);
+      --red: #ef4444; --red-bg: rgba(239, 68, 68, 0.1); --red-bd: rgba(239, 68, 68, 0.3);
+      --m: 'JetBrains Mono', 'Courier New', monospace;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--bg); color: var(--t1); line-height: 1.5; padding: 10px; max-width: 1000px; margin: 0 auto; }
+    
+    /* Header */
+    header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background: var(--s1); border: 1px solid var(--b1); border-radius: 12px; margin-bottom: 20px; position: sticky; top: 10px; z-index: 100; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+    .logo { display:flex; align-items:center; gap:10px; font-weight:800; font-size:18px; letter-spacing:-0.5px; }
+    .logo-badge { background:var(--amber); color:#000; padding:2px 8px; border-radius:4px; font-size:10px; text-transform:uppercase; font-family:var(--m); }
+    .nav-btns { display:flex; gap:10px; }
+    
+    /* Buttons */
+    .btn { background:var(--s2); border:1px solid var(--b1); color:var(--t1); padding:8px 16px; border-radius:8px; font-weight:600; cursor:pointer; font-size:14px; transition:all 0.2s; display:inline-flex; align-items:center; justify-content:center; gap:8px; }
+    .btn:hover { background:var(--b1); border-color:var(--b2); }
+    .btn-primary { background:var(--green-bg); border-color:var(--green-bd); color:var(--green); }
+    .btn-primary:hover { background:rgba(16, 185, 129, 0.2); }
+    .btn-run { background:var(--t1); color:var(--bg); border:none; padding:12px 24px; font-size:16px; width:100%; margin-top:20px; box-shadow:0 0 20px rgba(255,255,255,0.2); }
+    .btn-run:hover { opacity:0.9; transform:translateY(-1px); }
+    .btn-run:disabled { opacity:0.5; cursor:not-allowed; transform:none; }
+    
+    /* Layout */
+    .grid-main { display:grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
+    @media (max-width: 768px) { .grid-main { grid-template-columns: 1fr; } }
+    
+    /* Cards & Form */
+    .card { background: var(--s1); border: 1px solid var(--b1); border-radius: 12px; padding: 20px; margin-bottom: 20px; }
+    .card-title { font-family:var(--m); font-size:10px; text-transform:uppercase; letter-spacing:1px; color:var(--t3); margin-bottom:15px; border-bottom:1px solid var(--b1); padding-bottom:8px; display:flex; justify-content:space-between; }
+    .field { margin-bottom: 15px; }
+    .field label { display: block; font-size: 12px; color: var(--t2); margin-bottom: 6px; font-weight: 600; }
+    .field input, .field select, .field textarea { width: 100%; background: var(--bg); border: 1px solid var(--b1); color: var(--t1); padding: 10px 12px; border-radius: 8px; font-size: 14px; outline: none; transition: border-color 0.2s; }
+    .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--t3); }
+    
+    /* Accordion */
+    .accordion { margin-top: 15px; border-top: 1px dashed var(--b1); padding-top: 15px; }
+    .acc-header { font-size:13px; color:var(--t2); cursor:pointer; display:flex; align-items:center; gap:8px; user-select:none; }
+    .acc-header:hover { color:var(--t1); }
+    .acc-content { display:none; margin-top:15px; }
+    .acc-content.open { display:block; }
+    
+    /* Progress UI */
+    .status-box { background:var(--bg); border:1px solid var(--b1); border-radius:8px; padding:15px; margin-bottom:20px; display:none; }
+    .progress-bar { height:6px; background:var(--s2); border-radius:3px; margin:10px 0; overflow:hidden; }
+    .progress-fill { height:100%; background:var(--green); width:0%; transition:width 0.3s; }
+    .status-text { font-family:var(--m); font-size:12px; color:var(--t2); }
+    
+    /* Result UI */
+    .result-box { display:none; }
+    .res-card { background:var(--green-bg); border:1px solid var(--green-bd); border-radius:12px; padding:20px; }
+    .video-mock { aspect-ratio:9/16; background:var(--bg); border:1px solid var(--b1); border-radius:8px; display:flex; flex-direction:column; align-items:center; justify-content:center; margin-bottom:15px; font-family:var(--m); color:var(--t3); overflow:hidden; }
+    .video-mock video { width:100%; height:100%; object-fit:cover; display:none; }
+    .pkg-item { margin-bottom:12px; }
+    .pkg-label { font-size:11px; color:var(--green); font-weight:700; margin-bottom:4px; text-transform:uppercase; }
+    .pkg-val { background:var(--bg); padding:10px; border-radius:6px; font-size:13px; word-break:break-word; border:1px solid var(--green-bd); }
+    
+    /* Queue UI */
+    #queue-view { display:none; }
+    .q-item { background:var(--s1); border:1px solid var(--b1); border-radius:8px; padding:15px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; gap:15px; transition:border-color 0.2s; }
+    .q-item:hover { border-color:var(--t3); }
+    .q-score { width:40px; height:40px; border-radius:8px; background:var(--green-bg); color:var(--green); display:flex; align-items:center; justify-content:center; font-family:var(--m); font-weight:700; font-size:16px; flex-shrink:0; }
+    .q-main { flex:1; }
+    .q-title { font-weight:700; font-size:15px; margin-bottom:4px; }
+    .q-meta { font-family:var(--m); font-size:10px; color:var(--t2); }
+    
+    /* Animations */
+    .spin { display:inline-block; animation:spin 1s linear infinite; }
+    @keyframes spin { 100% { transform:rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="logo">Creator OS <span class="logo-badge">Factory Mode</span></div>
+    <div class="nav-btns">
+      <button class="btn" onclick="toggleQueue()">📋 Queue</button>
+      <a href="/legacy" class="btn">🔬 Legacy Apps</a>
+    </div>
+  </header>
+
+  <main id="factory-view">
+    <div class="grid-main">
+      <!-- LEFT: SETUP -->
+      <div>
+        <div class="card">
+          <div class="card-title">Production Setup</div>
+          
+          <div class="field">
+            <label>Topic / Idea</label>
+            <input type="text" id="f-topic" placeholder="e.g. spider season Sydney renters $12 trick" />
+          </div>
+          
+          <div class="field">
+            <label>Target Product</label>
+            <input type="text" id="f-product" placeholder="e.g. Raid Max AU$18.99" />
+          </div>
+          
+          <div style="display:flex; gap:10px;">
+            <div class="field" style="flex:1">
+              <label>Market</label>
+              <select id="f-market">
+                <option value="AU">Australia (AU)</option>
+                <option value="US">USA (US)</option>
+                <option value="UK">UK (UK)</option>
+                <option value="CA">Canada (CA)</option>
+              </select>
+            </div>
+            <div class="field" style="flex:1">
+              <label>Duration</label>
+              <select id="f-duration">
+                <option value="15">15s (Flash)</option>
+                <option value="24" selected>24s (Standard)</option>
+                <option value="45">45s (Deep)</option>
+                <option value="60">60s (Max)</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="field">
+            <label>Platforms</label>
+            <input type="text" id="f-platforms" value="TikTok, YouTube Shorts" />
+          </div>
+
+          <div class="accordion">
+            <div class="acc-header" onclick="toggleAcc()"><span id="acc-icon">▶</span> Advanced Settings</div>
+            <div class="acc-content" id="f-adv">
+              <div style="display:flex; gap:10px;">
+                <div class="field" style="flex:1">
+                  <label>Scenes Count</label>
+                  <input type="number" id="f-scenes" value="4" />
+                </div>
+                <div class="field" style="flex:1">
+                  <label>Render Mode</label>
+                  <select id="f-render-mode">
+                    <option value="live">Full Video (live)</option>
+                    <option value="dry">Draft Script Only (dry)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <button class="btn-run" id="btn-run" onclick="runFactory()">🎬 Запустити Фабрику</button>
+        </div>
+      </div>
+
+      <!-- RIGHT: PROGRESS & RESULT -->
+      <div>
+        <div class="status-box" id="f-status">
+          <div class="card-title" style="color:var(--amber); border-color:var(--amber-bd)">Pipeline Status</div>
+          <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+            <span class="status-text" id="prog-text">Starting job...</span>
+            <span class="status-text" id="prog-pct">0%</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill" id="prog-fill"></div></div>
+          <div id="prog-log" style="font-family:var(--m); font-size:10px; color:var(--t3); margin-top:10px; white-space:pre-wrap; max-height:100px; overflow-y:auto;"></div>
+        </div>
+
+        <div class="result-box" id="f-result">
+          <div class="res-card">
+            <div class="card-title" style="color:var(--green); border-color:var(--green-bd)">Output Package</div>
+            <div class="grid-main" style="gap:15px; grid-template-columns: 1fr 1.5fr;">
+              <div class="video-mock" id="res-video-box">
+                 <div id="res-video-ph">No Video<br/>(Dry run or Error)</div>
+                 <video id="res-video" controls></video>
+              </div>
+              <div>
+                <div class="pkg-item">
+                  <div class="pkg-label">Title</div>
+                  <div class="pkg-val" id="res-title">Loading...</div>
+                </div>
+                <div class="pkg-item">
+                  <div class="pkg-label">Caption</div>
+                  <div class="pkg-val" id="res-caption">Loading...</div>
+                </div>
+                <div class="pkg-item">
+                  <div class="pkg-label">Affiliate Link Placeholder</div>
+                  <div class="pkg-val" id="res-link">Loading...</div>
+                </div>
+                <div style="display:flex; gap:10px; margin-top:15px;">
+                  <button class="btn btn-primary" style="flex:1" onclick="copyPkg()">📋 Copy All</button>
+                  <button class="btn" style="flex:1" onclick="resetFactory()">🔁 Start New</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div id="f-idle" class="card" style="text-align:center; padding:40px 20px; color:var(--t3);">
+          <div style="font-size:32px; margin-bottom:10px;">🏭</div>
+          <div style="font-weight:600; color:var(--t1);">Система очікує завдання</div>
+          <div style="font-size:12px; margin-top:5px;">Заповни форму зліва або вибери сценарій з черги.</div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <main id="queue-view">
+    <div class="card">
+      <div class="card-title">
+        <span>AI Scenario Queue</span>
+        <button class="btn" style="padding:4px 8px; font-size:10px;" onclick="generateQueue()" id="btn-gen-q">🔄 Generate (API)</button>
+      </div>
+      <div id="q-list">Loading queue...</div>
+    </div>
+  </main>
+
+  <script>
+    // Navigation
+    const views = ['factory-view', 'queue-view'];
+    function showView(id) { views.forEach(v => document.getElementById(v).style.display = v===id?'block':'none'); }
+    function toggleQueue() { showView('queue-view'); loadQueue(); }
+    
+    function toggleAcc() {
+      const c = document.getElementById('f-adv');
+      const i = document.getElementById('acc-icon');
+      c.classList.toggle('open');
+      i.textContent = c.classList.contains('open') ? '▼' : '▶';
+    }
+
+    // Tools
+    const el = id => document.getElementById(id);
+    let pollTimer = null;
+    let currentJobId = null;
+
+    // Load initial queue
+    async function loadQueue() {
+      el('q-list').innerHTML = 'Loading...';
+      try {
+        const res = await fetch('/api/factory/queue');
+        if(!res.ok) throw new Error('API Error');
+        const data = await res.json();
+        renderQueue(data.scenarios || []);
+      } catch (e) {
+        el('q-list').innerHTML = '<div style="color:red">Failed to load queue. Start backend.</div>';
+      }
+    }
+
+    function renderQueue(list) {
+      if(!list.length) {
+        el('q-list').innerHTML = '<div style="text-align:center; padding:20px; color:var(--t3)">Queue empty. Click Generate.</div>';
+        return;
+      }
+      el('q-list').innerHTML = list.filter(s=>s.status==='pending').map(s => `
+        <div class="q-item">
+          <div class="q-score" style="color:${s.score>=75?'var(--green)':s.score>=55?'var(--amber)':'var(--red)'}; background:color-mix(in srgb, currentColor 10%, transparent)">${s.score}</div>
+          <div class="q-main">
+            <div class="q-title">${s.topic}</div>
+            <div class="q-meta">${s.product} · ${s.market} · ${s.hook}</div>
+          </div>
+          <button class="btn btn-primary" onclick="loadScenario('${btoa(encodeURIComponent(JSON.stringify(s)))}')">▶ Fill Form</button>
+        </div>
+      `).join('');
+    }
+
+    async function generateQueue() {
+      el('btn-gen-q').innerHTML = '<span class="spin">↻</span> Generating...';
+      el('btn-gen-q').disabled = true;
+      try {
+        const res = await fetch('/api/factory/queue/generate', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ count: 5, market: el('f-market').value || 'AU' })
+        });
+        if(!res.ok) throw new Error('Generation failed');
+        await loadQueue();
+      } catch (e) {
+        alert('Failed to generate. Ensure ANTHROPIC_API_KEY is set in .env');
+      } finally {
+        el('btn-gen-q').innerHTML = '🔄 Generate (API)';
+        el('btn-gen-q').disabled = false;
+      }
+    }
+
+    function loadScenario(b64) {
+      const s = JSON.parse(decodeURIComponent(atob(b64)));
+      el('f-topic').value = s.topic;
+      el('f-product').value = s.product;
+      el('f-market').value = s.market;
+      showView('factory-view');
+    }
+
+    // Factory Runner
+    async function runFactory() {
+      const topic = el('f-topic').value.trim();
+      const product = el('f-product').value.trim();
+      if(!topic || !product) return alert('Enter topic and product');
+
+      el('btn-run').disabled = true;
+      el('btn-run').innerHTML = '<span class="spin">↻</span> Running...';
+      el('f-idle').style.display = 'none';
+      el('f-result').style.display = 'none';
+      el('f-status').style.display = 'block';
+      el('prog-log').textContent = '';
+      updateProg(0, 'Initialize job...');
+
+      try {
+        const res = await fetch('/api/factory/run', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            topic, product, market: el('f-market').value,
+            platforms: el('f-platforms').value,
+            durationSec: el('f-duration').value,
+            advanced: {
+              scenesCount: el('f-scenes').value,
+              renderMode: el('f-render-mode').value
+            }
+          })
+        });
+        const data = await res.json();
+        if(!res.ok) throw new Error(data.error || 'Failed to start');
+        
+        currentJobId = data.id;
+        pollTimer = setInterval(pollJob, 2000);
+      } catch (e) {
+        finishJobWithError(e.message);
+      }
+    }
+
+    function updateProg(pct, text) {
+      el('prog-fill').style.width = pct + '%';
+      el('prog-pct').textContent = pct + '%';
+      if(text) el('prog-text').textContent = text;
+    }
+
+    async function pollJob() {
+      if(!currentJobId) return stopPoll();
+      try {
+        const res = await fetch('/api/factory/jobs/' + currentJobId);
+        if(!res.ok) throw new Error('Job read error');
+        const job = await res.json();
+        
+        // Calculate progress roughly
+        const stepMap = {'script_generation':20, 'voice_generation':40, 'clip_fetch':60, 'render_plan':70, 'publish_package':80, 'save_outputs':90, 'completed':100};
+        const p = stepMap[job.step] || 10;
+        updateProg(p, 'Step: ' + String(job.step).replace('_', ' '));
+
+        const logs = [...(job.logs||[]), ...(job.warnings||[])].join('\n');
+        el('prog-log').textContent = logs;
+
+        if(job.status === 'completed' || job.status === 'failed') {
+          stopPoll();
+          if(job.status === 'failed') finishJobWithError(job.error);
+          else showResult(job.result);
+        }
+      } catch (e) { stopPoll(); finishJobWithError(e.message); }
+    }
+
+    function stopPoll() { clearInterval(pollTimer); pollTimer = null; }
+
+    function finishJobWithError(msg) {
+      el('btn-run').disabled = false;
+      el('btn-run').innerHTML = '🎬 Запустити Фабрику';
+      updateProg(100, 'Error!');
+      el('prog-fill').style.background = 'var(--red)';
+      el('prog-log').textContent += '\n\nERROR: ' + msg;
+    }
+
+    function showResult(res) {
+      el('btn-run').disabled = false;
+      el('btn-run').innerHTML = '🎬 Запустити Фабрику';
+      el('prog-fill').style.background = 'var(--green)';
+      updateProg(100, 'Done!');
+
+      el('f-status').style.display = 'none';
+      el('f-result').style.display = 'block';
+
+      el('res-title').textContent = res.title || 'No Title';
+      el('res-caption').textContent = res.caption || 'No Caption';
+      el('res-link').textContent = res.affiliateLink || 'No Link';
+
+      const vEl = el('res-video');
+      const vPh = el('res-video-ph');
+      if(res.videoUrl) {
+         vEl.src = res.videoUrl;
+         vEl.style.display = 'block';
+         vPh.style.display = 'none';
+      } else {
+         vEl.style.display = 'none';
+         vPh.style.display = 'flex';
+      }
+    }
+
+    function resetFactory() {
+      el('f-result').style.display = 'none';
+      el('f-idle').style.display = 'block';
+      el('f-topic').value = '';
+      el('f-product').value = '';
+      el('btn-run').innerHTML = '🎬 Запустити Фабрику';
+      el('prog-fill').style.background = 'var(--green)';
+    }
+
+    function copyPkg() {
+      const text = [el('res-title').textContent, el('res-caption').textContent, el('res-link').textContent].join('\n\n');
+      navigator.clipboard.writeText(text);
+      alert('Copied to clipboard!');
+    }
+  </script>
+</body>
+</html>
