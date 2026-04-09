@@ -290,6 +290,22 @@
     let pollTimer = null;
     let currentJobId = null;
 
+    // API key helper — fetched once from /api/config on boot
+    const API_KEY = (window.__ADMIN_KEY__ || '').trim();
+    // Prefetch key from server (sets window.__ADMIN_KEY__ before any fetch)
+    (async () => {
+      try {
+        const cfg = await fetch('/api/config').then(r => r.json());
+        if (cfg.adminKey) window.__ADMIN_KEY__ = cfg.adminKey;
+      } catch (_) {}
+    })();
+    function apiHeaders(extra = {}) {
+      const h = { 'Content-Type': 'application/json', ...extra };
+      const key = (window.__ADMIN_KEY__ || '').trim();
+      if (key) h['X-Api-Key'] = key;
+      return h;
+    }
+
     // Load initial queue
     async function loadQueue() {
       el('q-list').innerHTML = 'Завантаження...';
@@ -326,8 +342,8 @@
       try {
         const res = await fetch('/api/factory/queue/generate', {
           method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({ 
+          headers: apiHeaders(),
+          body: JSON.stringify({
             count: 5, 
             market: el('q-market').value || 'AU',
             niche: el('q-niche').value || 'pest control'
@@ -372,7 +388,7 @@
       try {
         const res = await fetch('/api/factory/run', {
           method: 'POST',
-          headers: {'Content-Type': 'application/json'},
+          headers: apiHeaders(),
           body: JSON.stringify({
             topic, product, market: el('f-market').value,
             platforms: el('f-platforms').value,

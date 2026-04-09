@@ -52,7 +52,23 @@ const JOB_DIR = path.join(RUNTIME_DIR, 'jobs');
 const RENDER_DIR = path.join(RUNTIME_DIR, 'renders');
 const QUEUE_DIR = path.join(RUNTIME_DIR, 'queue');
 
-app.use(cors());
+// ── CORS allowlist ──
+const ALLOWED_ORIGINS = [
+  'https://creator-os-backend-3uor.onrender.com',
+  'http://localhost:3000',
+  'http://localhost:3001',
+  ...(process.env.CORS_ALLOWED_ORIGIN ? [process.env.CORS_ALLOWED_ORIGIN] : [])
+];
+app.use(cors({
+  origin: (origin, callback) => {
+    // allow server-to-server / curl (no origin header)
+    if (!origin || ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
+    callback(new Error(`CORS: origin ${origin} not allowed`));
+  },
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'X-Api-Key']
+}));
+
 app.use(express.json({ limit: '2mb' }));
 app.use((_req, res, next) => {
   res.setHeader('X-App-Version', APP_VERSION);
@@ -65,10 +81,24 @@ const limiter = rateLimit({
   max: 100,
   message: { error: 'Too many requests, please try again later.' }
 });
-
 app.use('/api/', limiter);
+
+// ── Auth middleware (protects mutating endpoints) ──
+function requireApiKey(req, res, next) {
+  const serverKey = process.env.ADMIN_API_KEY;
+  if (!serverKey) return next(); // disabled if key not set (dev mode)
+  const clientKey = req.headers['x-api-key'];
+  if (!clientKey || clientKey !== serverKey) {
+    return res.status(401).json({ error: 'Unauthorized. Missing or invalid X-Api-Key header.' });
+  }
+  next();
+}
+
 app.use(express.static('public', { index: false }));
-app.use('/runtime', express.static(RUNTIME_DIR));
+
+// ── Runtime static — only renders & audio are public ──
+app.use('/runtime/renders', express.static(path.join(RUNTIME_DIR, 'renders')));
+app.use('/runtime/audio', express.static(path.join(RUNTIME_DIR, 'audio')));
 
 function uid(prefix = 'job') {
   return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
@@ -1266,6 +1296,11 @@ app.get('/version', (_req, res) => {
   });
 });
 
+// Public config endpoint — exposes client key for the frontend
+app.get('/api/config', (_req, res) => {
+  res.json({ adminKey: process.env.ADMIN_API_KEY || '' });
+});
+
 app.get('/api/automation/status', async (_req, res) => {
   const ffmpegAvailable = await isFfmpegAvailable();
   res.json({
@@ -1316,7 +1351,7 @@ app.get('/api/factory/jobs/:jobId/package.txt', async (req, res) => {
   }
 });
 
-app.post('/api/factory/jobs/:jobId/cancel', async (req, res) => {
+app.post('/api/factory/jobs/:jobId/cancel', requireApiKey, async (req, res) => {
   try {
     const result = await cancelFactoryJob(req.params.jobId);
     if (!result.ok) {
@@ -1328,7 +1363,7 @@ app.post('/api/factory/jobs/:jobId/cancel', async (req, res) => {
   }
 });
 
-app.post('/api/factory/jobs/:jobId/retry', async (req, res) => {
+app.post('/api/factory/jobs/:jobId/retry', requireApiKey, async (req, res) => {
   try {
     const existing = await readJob(req.params.jobId);
     const validation = validateFactoryInput({
@@ -1350,7 +1385,7 @@ app.post('/api/factory/jobs/:jobId/retry', async (req, res) => {
   }
 });
 
-app.post('/api/factory/run', async (req, res) => {
+app.post('/api/factory/run', requireApiKey, async (req, res) => {
   const validation = validateFactoryInput(req.body || {});
   try {
     if (!validation.ok) {
@@ -1364,7 +1399,7 @@ app.post('/api/factory/run', async (req, res) => {
   }
 });
 
-app.post('/api/chat', async (req, res) => {
+app.post('/api/chat', requireApiKey, async (req, res) => {
   const { system, messages, model } = req.body;
 
   if (!process.env.ANTHROPIC_API_KEY) {
@@ -1381,7 +1416,7 @@ app.post('/api/chat', async (req, res) => {
   }
 });
 
-app.post('/api/automation/script', async (req, res) => {
+app.post('/api/automation/script', requireApiKey, async (req, res) => {
   try {
     const plan = await generateScriptPlan(req.body || {});
     res.json(plan);
@@ -1391,7 +1426,7 @@ app.post('/api/automation/script', async (req, res) => {
   }
 });
 
-app.post('/api/automation/full-video', async (req, res) => {
+app.post('/api/automation/full-video', requireApiKey, async (req, res) => {
   const input = req.body || {};
   const jobId = uid('video');
 
@@ -1492,7 +1527,7 @@ app.get('/api/factory/queue', async (_req, res) => {
 });
 
 /* ── POST /api/factory/queue/generate ── */
-app.post('/api/factory/queue/generate', async (req, res) => {
+app.post('/api/factory/queue/generate', requireApiKey, async (req, res) => {
   const market = String(req.body?.market || 'AU').toUpperCase();
   const niche = String(req.body?.niche || 'pest control');
   const count = Math.min(Number(req.body?.count || 10), 20);
