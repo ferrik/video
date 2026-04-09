@@ -254,8 +254,8 @@ async function generateScriptPlan(input) {
     '- Max 8 words per line',
     'Structure: 1. HOOK (shock, fear, or curiosity) 2. PROBLEM (what is going wrong) 3. SOLUTION (product fixes it) 4. PROOF (why it works) 5. CTA (must push user to click "link in bio").',
     'Also generate overlay text (very short phrases) for each scene.',
-    'IMPORTANT: The on_screen_text field is what actually gets written over the video. Make it MAX 5 WORDS, aggressive and highly readable.',
-    'Return ONLY valid JSON.'
+    'IMPORTANT: The on_screen_text field is what actually gets written over the video. Make it MAX 5 WORDS, uppercase, aggressive and highly readable.',
+    'Return ONLY valid JSON including a pool of 3 candidate hooks and a calculated hook_score (0-100).'
   ].join('\n');
 
   const user = [
@@ -264,10 +264,10 @@ async function generateScriptPlan(input) {
     `Platform: ${platform}`,
     `Target Market: ${market}`,
     `Total duration: ${durationSec} seconds`,
-    'Task: Generate 3 different hooks internally, pick the absolute best one (highest tension/fear), and use it for scene 1.',
+    'Task: Generate 3 different hooks internally, pick the absolute best one (highest tension/fear), and use it for scene 1. Also include all 3 in "hooks_pool".',
     'Generate exactly 5 scenes corresponding to the 5 structure steps.',
     'Schema:',
-    '{"title":"string (aggressive hook)","caption":"string","viral_structure":{"hook":"string","problem":"string","solution":"string","proof":"string","cta":"string"},"scenes":[{"scene_id":1,"voiceover":"string","on_screen_text":"string","search_query":"string","duration_sec":4}]}'
+    '{"title":"string (aggressive hook)","caption":"string","hooks_pool":["string","string","string"],"hook_score":95,"viral_structure":{"hook":"string","problem":"string","solution":"string","proof":"string","cta":"string"},"scenes":[{"scene_id":1,"voiceover":"string","on_screen_text":"string","search_query":"string","duration_sec":4}]}'
   ].join('\n');
 
   try {
@@ -298,6 +298,8 @@ async function generateScriptPlan(input) {
       caption: parsed.caption || '',
       caption_uk: parsed.caption_uk || '',
       viral_structure: parsed.viral_structure || {},
+      hooks_pool: parsed.hooks_pool || [],
+      hook_score: parsed.hook_score || 0,
       full_voiceover: parsed.full_voiceover || (parsed.scenes || []).map(scene => scene.voiceover).join(' '),
       scenes: Array.isArray(parsed.scenes) && parsed.scenes.length
         ? parsed.scenes
@@ -556,6 +558,7 @@ function shellQuote(value) {
 // Escape text for FFmpeg drawtext filter
 function escapeDrawtext(text) {
   return String(text || '')
+    .toUpperCase()
     .replace(/\\/g, '\\\\')
     .replace(/'/g, "\\\\'")  // escape single quotes
     .replace(/:/g, '\\\\:')  // escape colons
@@ -580,18 +583,18 @@ function buildRenderArgs({ clipAssets, audioFilePath, outputFilePath, scenes }) 
     const rawText = scene.on_screen_text || '';
     if (rawText) {
       const safeText = escapeDrawtext(rawText);
-      // White bold text, bottom-center, semi-transparent dark background box
+      // White bold uppercase text, centered in upper third, semi-transparent dark background box
       f += `,drawtext=text='${safeText}'`
-        + `:fontsize=68`
+        + `:fontsize=96`
         + `:fontcolor=white`
         + `:x=(w-text_w)/2`
-        + `:y=h-text_h-100`
+        + `:y=(h-text_h)/3`
         + `:box=1`
         + `:boxcolor=black@0.55`
-        + `:boxborderw=24`
+        + `:boxborderw=30`
         + `:shadowcolor=black@0.8`
-        + `:shadowx=2`
-        + `:shadowy=2`;
+        + `:shadowx=3`
+        + `:shadowy=3`;
     }
 
     f += `[v${index}]`;
@@ -626,9 +629,16 @@ function buildRenderArgs({ clipAssets, audioFilePath, outputFilePath, scenes }) 
   return args;
 }
 
-function generateAffiliateLink(product) {
+async function generateAffiliateLink(product) {
   const query = encodeURIComponent(product);
-  return `https://www.amazon.co.uk/s?k=${query}&tag=YOUR_TAG`;
+  const longUrl = `https://www.amazon.co.uk/s?k=${query}&tag=YOUR_TAG`;
+  try {
+    const res = await axios.get(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(longUrl)}`, { timeout: 5000 });
+    return res.data;
+  } catch (err) {
+    console.warn('TinyURL failed, using long URL:', err.message);
+    return longUrl;
+  }
 }
 
 async function isFfmpegAvailable() {
@@ -1155,8 +1165,10 @@ async function executeFactoryJob(jobId, input = {}) {
       title: scriptPlan.title || input.topic || 'Factory output',
       caption: scriptPlan.caption || '',
       caption_uk: scriptPlan.caption_uk || '',
+      hooks_pool: scriptPlan.hooks_pool || [],
+      hook_score: scriptPlan.hook_score || 0,
       hashtags,
-      affiliateLink: generateAffiliateLink(input.product || 'affiliate product'),
+      affiliateLink: await generateAffiliateLink(input.product || 'affiliate product'),
       publishNotes: `Ready for manual publishing on ${platform}. Target: ${input.market}.`,
       voiceUrl: voiceResult?.publicUrl || null,
       metadata: {

@@ -211,13 +211,21 @@
           </div>
           
           <div class="res-card" id="res-viral-card" style="margin-top:15px; display:none;">
-            <div class="card-title" style="color:var(--amber); border-color:var(--amber-bd)">🎬 СЦЕНАРІЙ (Viral Framework)</div>
+            <div class="card-title" style="color:var(--amber); border-color:var(--amber-bd); display:flex; justify-content:space-between; align-items:center;">
+              <span>🎬 СЦЕНАРІЙ (Viral Framework)</span>
+              <span id="v-score" style="font-size:12px; background:var(--amber-bg); color:var(--amber); padding:2px 8px; border-radius:12px; border:1px solid var(--amber-bd)">🔥 Score: --</span>
+            </div>
             <div style="font-size:12px; line-height:1.6;">
               <div style="margin-bottom:8px;"><b>HOOK:</b> <span id="v-hook" style="color:var(--t1)">...</span></div>
               <div style="margin-bottom:8px;"><b>PROBLEM:</b> <span id="v-problem" style="color:var(--t1)">...</span></div>
               <div style="margin-bottom:8px;"><b>SOLUTION:</b> <span id="v-solution" style="color:var(--t1)">...</span></div>
               <div style="margin-bottom:8px;"><b>PROOF:</b> <span id="v-proof" style="color:var(--t1)">...</span></div>
               <div style="margin-bottom:8px;"><b>CTA:</b> <span id="v-cta" style="color:var(--t1)">...</span></div>
+            </div>
+
+            <div style="margin-top:15px; padding-top:10px; border-top:1px solid var(--bd); font-size:11px; color:var(--t3);">
+              <b>АЛЬТЕРНАТИВНІ ХУКИ (A/B Test):</b>
+              <div id="v-pool" style="margin-top:5px; font-style:italic;">...</div>
             </div>
             
             <div class="card-title" style="color:var(--blue); border-color:var(--blue-bd); margin-top:20px;">📺 Overlay Text (На екрані)</div>
@@ -503,6 +511,15 @@
         el('v-solution').textContent = vs.solution || '';
         el('v-proof').textContent = vs.proof || '';
         el('v-cta').textContent = vs.cta || '';
+        
+        // Show Score
+        el('v-score').textContent = `🔥 Score: ${res.hook_score || 0}/100`;
+        
+        // Show Pool
+        const pool = res.hooks_pool || [];
+        el('v-pool').innerHTML = pool.length > 0 
+          ? pool.map(h => `<div style="margin-bottom:4px; padding-left:10px; border-left:2px solid var(--bd)">${h}</div>`).join('')
+          : 'Немає альтернатив';
       } else {
         el('res-viral-card').style.display = 'none';
       }

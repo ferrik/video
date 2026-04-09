@@ -237,8 +237,7 @@ http://localhost:3000/api/automation/status
 
 ## Recommended deployment topology
 
-- Render: backend API + runtime processing (`index.js`). Handles auth, generation, and FFmpeg logic.
-- Vercel (optional): frontend UI only. Do not expose server secrets in frontend configuration layers.
+- Render: backend API + frontend UI + runtime processing (`index.js`). Handles auth, generation, and FFmpeg logic.
 
 Add these environment variables in Render as needed:
 
