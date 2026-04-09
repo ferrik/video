@@ -229,9 +229,11 @@ async function generateScriptPlan(input) {
   const platform = input.platform || 'TikTok';
   const durationSec = input.durationSec || 24;
   const scenesCount = input.scenesCount || 4;
+  const market = input.market || 'Global';
 
   const system = [
     'You generate short-form video plans for a fully automated content pipeline.',
+    `CRITICAL: Generate all video text (voiceover, on_screen_text, hook, caption) in the primary language/dialect of the target market: ${market}. Provide a localized experience.`,
     'Return only valid JSON.',
     'Use concise scene-by-scene voiceover, screen text, and search queries for stock clips.',
     'IMPORTANT: on_screen_text must be MAX 6 WORDS — bold, punchy, no full sentences.',
@@ -243,11 +245,12 @@ async function generateScriptPlan(input) {
     `Topic: ${topic}`,
     `Product: ${product}`,
     `Platform: ${platform}`,
+    `Target Market: ${market}`,
     `Total duration: ${durationSec} seconds`,
     `Scene count: ${scenesCount}`,
     'Rules: on_screen_text = max 6 words, short punchy hook per scene, like TikTok captions.',
     'Schema:',
-    '{"title":"string","hook":"string","cta":"string","caption":"string","full_voiceover":"string","scenes":[{"scene_id":1,"voiceover":"string","on_screen_text":"string","search_query":"string","duration_sec":6}]}'
+    '{"title":"string","hook":"string","cta":"string","caption":"string","caption_uk":"string (Ukrainian translation of caption)","full_voiceover":"string","scenes":[{"scene_id":1,"voiceover":"string","on_screen_text":"string","search_query":"string","duration_sec":6}]}'
   ].join('\n');
 
   try {

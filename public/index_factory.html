@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Creator OS — Factory Mode</title>
+  <title>Creator OS — Фабрика</title>
   <style>
     :root {
       --bg: #0b0914; --s1: #151226; --s2: #1e1a36;
@@ -15,21 +15,29 @@
       --m: 'JetBrains Mono', 'Courier New', monospace;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--bg); color: var(--t1); line-height: 1.5; padding: 10px; max-width: 1000px; margin: 0 auto; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--bg); color: var(--t1); line-height: 1.5; padding: 10px; max-width: 1000px; margin: 0 auto; overflow-x: hidden; }
     
-    /* Header */
+    /* Header & Mobile Nav */
     header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background: var(--s1); border: 1px solid var(--b1); border-radius: 12px; margin-bottom: 20px; position: sticky; top: 10px; z-index: 100; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
     .logo { display:flex; align-items:center; gap:10px; font-weight:800; font-size:18px; letter-spacing:-0.5px; }
     .logo-badge { background:var(--amber); color:#000; padding:2px 8px; border-radius:4px; font-size:10px; text-transform:uppercase; font-family:var(--m); }
+    
     .nav-btns { display:flex; gap:10px; }
+    .hamburger { display:none; background:none; border:none; color:var(--t1); font-size:24px; cursor:pointer; }
+    
+    @media (max-width: 768px) { 
+      .nav-btns { display:none; flex-direction:column; position:absolute; top:70px; right:20px; background:var(--s1); padding:15px; border:1px solid var(--b1); border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,0.8); width:200px; }
+      .nav-btns.active { display:flex; }
+      .hamburger { display:block; }
+    }
     
     /* Buttons */
-    .btn { background:var(--s2); border:1px solid var(--b1); color:var(--t1); padding:8px 16px; border-radius:8px; font-weight:600; cursor:pointer; font-size:14px; transition:all 0.2s; display:inline-flex; align-items:center; justify-content:center; gap:8px; }
+    .btn { background:var(--s2); border:1px solid var(--b1); color:var(--t1); padding:8px 16px; border-radius:8px; font-weight:600; cursor:pointer; font-size:14px; transition:all 0.2s; display:inline-flex; align-items:center; justify-content:center; gap:8px; width:100%; }
     .btn:hover { background:var(--b1); border-color:var(--b2); }
     .btn-primary { background:var(--green-bg); border-color:var(--green-bd); color:var(--green); }
     .btn-primary:hover { background:rgba(16, 185, 129, 0.2); }
-    .btn-run { background:var(--t1); color:var(--bg); border:none; padding:12px 24px; font-size:16px; width:100%; margin-top:20px; box-shadow:0 0 20px rgba(255,255,255,0.2); }
-    .btn-run:hover { opacity:0.9; transform:translateY(-1px); }
+    .btn-run { background:var(--t1); color:var(--bg); border:none; padding:12px 24px; font-size:16px; width:100%; margin-top:20px; border-radius:8px; font-weight:bold; box-shadow:0 0 20px rgba(255,255,255,0.2); transition:transform 0.1s;}
+    .btn-run:active { transform:scale(0.98); }
     .btn-run:disabled { opacity:0.5; cursor:not-allowed; transform:none; }
     
     /* Layout */
@@ -38,7 +46,7 @@
     
     /* Cards & Form */
     .card { background: var(--s1); border: 1px solid var(--b1); border-radius: 12px; padding: 20px; margin-bottom: 20px; }
-    .card-title { font-family:var(--m); font-size:10px; text-transform:uppercase; letter-spacing:1px; color:var(--t3); margin-bottom:15px; border-bottom:1px solid var(--b1); padding-bottom:8px; display:flex; justify-content:space-between; }
+    .card-title { font-family:var(--m); font-size:10px; text-transform:uppercase; letter-spacing:1px; color:var(--t3); margin-bottom:15px; border-bottom:1px solid var(--b1); padding-bottom:8px; display:flex; justify-content:space-between; align-items:center; }
     .field { margin-bottom: 15px; }
     .field label { display: block; font-size: 12px; color: var(--t2); margin-bottom: 6px; font-weight: 600; }
     .field input, .field select, .field textarea { width: 100%; background: var(--bg); border: 1px solid var(--b1); color: var(--t1); padding: 10px 12px; border-radius: 8px; font-size: 14px; outline: none; transition: border-color 0.2s; }
@@ -48,12 +56,12 @@
     .accordion { margin-top: 15px; border-top: 1px dashed var(--b1); padding-top: 15px; }
     .acc-header { font-size:13px; color:var(--t2); cursor:pointer; display:flex; align-items:center; gap:8px; user-select:none; }
     .acc-header:hover { color:var(--t1); }
-    .acc-content { display:none; margin-top:15px; }
+    .acc-content { display:none; margin-top:15px; padding-left:10px; border-left:2px solid var(--b1); }
     .acc-content.open { display:block; }
     
     /* Progress UI */
     .status-box { background:var(--bg); border:1px solid var(--b1); border-radius:8px; padding:15px; margin-bottom:20px; display:none; }
-    .progress-bar { height:6px; background:var(--s2); border-radius:3px; margin:10px 0; overflow:hidden; }
+    .progress-bar { height:8px; background:var(--s2); border-radius:4px; margin:10px 0; overflow:hidden; }
     .progress-fill { height:100%; background:var(--green); width:0%; transition:width 0.3s; }
     .status-text { font-family:var(--m); font-size:12px; color:var(--t2); }
     
@@ -63,17 +71,19 @@
     .video-mock { aspect-ratio:9/16; background:var(--bg); border:1px solid var(--b1); border-radius:8px; display:flex; flex-direction:column; align-items:center; justify-content:center; margin-bottom:15px; font-family:var(--m); color:var(--t3); overflow:hidden; }
     .video-mock video { width:100%; height:100%; object-fit:cover; display:none; }
     .pkg-item { margin-bottom:12px; }
-    .pkg-label { font-size:11px; color:var(--green); font-weight:700; margin-bottom:4px; text-transform:uppercase; }
-    .pkg-val { background:var(--bg); padding:10px; border-radius:6px; font-size:13px; word-break:break-word; border:1px solid var(--green-bd); }
-    
+    .pkg-label { font-size:11px; color:var(--green); font-weight:700; margin-bottom:4px; text-transform:uppercase; font-family:var(--m); }
+    .pkg-val { background:var(--bg); padding:12px; border-radius:8px; font-size:14px; word-break:break-word; border:1px solid var(--b1); }
+    .pkg-trans { font-size:12px; color:var(--t2); background:rgba(255,255,255,0.05); padding:8px; border-radius:6px; margin-top:5px; border-left:2px solid var(--amber); }
+
     /* Queue UI */
     #queue-view { display:none; }
-    .q-item { background:var(--s1); border:1px solid var(--b1); border-radius:8px; padding:15px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; gap:15px; transition:border-color 0.2s; }
+    .q-item { background:var(--s1); border:1px solid var(--b1); border-radius:8px; padding:15px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; gap:15px; transition:transform 0.1s, border-color 0.2s; }
     .q-item:hover { border-color:var(--t3); }
+    @media (max-width: 500px) { .q-item { flex-direction:column; align-items:flex-start; } .q-item .btn { width:100%; } }
     .q-score { width:40px; height:40px; border-radius:8px; background:var(--green-bg); color:var(--green); display:flex; align-items:center; justify-content:center; font-family:var(--m); font-weight:700; font-size:16px; flex-shrink:0; }
     .q-main { flex:1; }
     .q-title { font-weight:700; font-size:15px; margin-bottom:4px; }
-    .q-meta { font-family:var(--m); font-size:10px; color:var(--t2); }
+    .q-meta { font-family:var(--m); font-size:12px; color:var(--t2); }
     
     /* Animations */
     .spin { display:inline-block; animation:spin 1s linear infinite; }
@@ -83,10 +93,11 @@
 <body>
 
   <header>
-    <div class="logo">Creator OS <span class="logo-badge">Factory Mode</span></div>
-    <div class="nav-btns">
-      <button class="btn" onclick="toggleQueue()">📋 Queue</button>
-      <a href="/legacy" class="btn">🔬 Legacy Apps</a>
+    <div class="logo">Creator OS <span class="logo-badge">Фабрика</span></div>
+    <button class="hamburger" onclick="toggleMobileNav()">☰</button>
+    <div class="nav-btns" id="nav-btns">
+      <button class="btn" onclick="toggleQueue()">📋 Сценарії (Черга)</button>
+      <a href="/legacy" class="btn">🔬 Старі Додатки</a>
     </div>
   </header>
 
@@ -95,57 +106,57 @@
       <!-- LEFT: SETUP -->
       <div>
         <div class="card">
-          <div class="card-title">Production Setup</div>
+          <div class="card-title">Налаштування Виробництва</div>
           
           <div class="field">
-            <label>Topic / Idea</label>
-            <input type="text" id="f-topic" placeholder="e.g. spider season Sydney renters $12 trick" />
+            <label>Тема / Ідея відео</label>
+            <input type="text" id="f-topic" placeholder="напр. павуки вдома в Сіднеї, засіб за $12" />
           </div>
           
           <div class="field">
-            <label>Target Product</label>
-            <input type="text" id="f-product" placeholder="e.g. Raid Max AU$18.99" />
+            <label>Продукт (Оффер)</label>
+            <input type="text" id="f-product" placeholder="напр. Raid Max AU$18.99" />
           </div>
           
           <div style="display:flex; gap:10px;">
             <div class="field" style="flex:1">
-              <label>Market</label>
+              <label>Ринок (Країна)</label>
               <select id="f-market">
-                <option value="AU">Australia (AU)</option>
-                <option value="US">USA (US)</option>
-                <option value="UK">UK (UK)</option>
-                <option value="CA">Canada (CA)</option>
+                <option value="AU">Австралія (AU)</option>
+                <option value="US">США (US)</option>
+                <option value="UK">Британія (UK)</option>
+                <option value="CA">Канада (CA)</option>
               </select>
             </div>
             <div class="field" style="flex:1">
-              <label>Duration</label>
+              <label>Тривалість</label>
               <select id="f-duration">
-                <option value="15">15s (Flash)</option>
-                <option value="24" selected>24s (Standard)</option>
-                <option value="45">45s (Deep)</option>
-                <option value="60">60s (Max)</option>
+                <option value="15">15с (Швидко)</option>
+                <option value="24" selected>24с (Стандарт)</option>
+                <option value="45">45с (Глибоко)</option>
+                <option value="60">60с (Макс)</option>
               </select>
             </div>
           </div>
           
           <div class="field">
-            <label>Platforms</label>
+            <label>Платформи публікації</label>
             <input type="text" id="f-platforms" value="TikTok, YouTube Shorts" />
           </div>
 
           <div class="accordion">
-            <div class="acc-header" onclick="toggleAcc()"><span id="acc-icon">▶</span> Advanced Settings</div>
+            <div class="acc-header" onclick="toggleAcc()"><span id="acc-icon">▶</span> Розширені Налаштування (Додатково)</div>
             <div class="acc-content" id="f-adv">
               <div style="display:flex; gap:10px;">
                 <div class="field" style="flex:1">
-                  <label>Scenes Count</label>
+                  <label>Кількість сцен</label>
                   <input type="number" id="f-scenes" value="4" />
                 </div>
                 <div class="field" style="flex:1">
-                  <label>Render Mode</label>
+                  <label>Режим рендеру</label>
                   <select id="f-render-mode">
-                    <option value="live">Full Video (live)</option>
-                    <option value="dry">Draft Script Only (dry)</option>
+                    <option value="live">Повне відео (Live)</option>
+                    <option value="dry">Лише текст (План)</option>
                   </select>
                 </div>
               </div>
@@ -159,9 +170,9 @@
       <!-- RIGHT: PROGRESS & RESULT -->
       <div>
         <div class="status-box" id="f-status">
-          <div class="card-title" style="color:var(--amber); border-color:var(--amber-bd)">Pipeline Status</div>
+          <div class="card-title" style="color:var(--amber); border-color:var(--amber-bd)">Статус Збірки</div>
           <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
-            <span class="status-text" id="prog-text">Starting job...</span>
+            <span class="status-text" id="prog-text">Початок роботи...</span>
             <span class="status-text" id="prog-pct">0%</span>
           </div>
           <div class="progress-bar"><div class="progress-fill" id="prog-fill"></div></div>
@@ -170,28 +181,31 @@
 
         <div class="result-box" id="f-result">
           <div class="res-card">
-            <div class="card-title" style="color:var(--green); border-color:var(--green-bd)">Output Package</div>
+            <div class="card-title" style="color:var(--green); border-color:var(--green-bd)">Готовий Пакет для Публікації</div>
             <div class="grid-main" style="gap:15px; grid-template-columns: 1fr 1.5fr;">
               <div class="video-mock" id="res-video-box">
-                 <div id="res-video-ph">No Video<br/>(Dry run or Error)</div>
+                 <div id="res-video-ph">Немає Відео<br/>(Драфт або Помилка)</div>
                  <video id="res-video" controls></video>
               </div>
               <div>
                 <div class="pkg-item">
-                  <div class="pkg-label">Title</div>
-                  <div class="pkg-val" id="res-title">Loading...</div>
+                  <div class="pkg-label">Назва / Заголовок</div>
+                  <div class="pkg-val" id="res-title">Завантаження...</div>
                 </div>
                 <div class="pkg-item">
-                  <div class="pkg-label">Caption</div>
-                  <div class="pkg-val" id="res-caption">Loading...</div>
+                  <div class="pkg-label">Текст посту (Підпис)</div>
+                  <div class="pkg-val">
+                    <div id="res-caption">Завантаження...</div>
+                    <div class="pkg-trans" id="res-caption-uk">Переклад...</div>
+                  </div>
                 </div>
                 <div class="pkg-item">
-                  <div class="pkg-label">Affiliate Link Placeholder</div>
-                  <div class="pkg-val" id="res-link">Loading...</div>
+                  <div class="pkg-label">Афіліатне Посилання</div>
+                  <div class="pkg-val" id="res-link" style="color:var(--t3); font-family:var(--m)">Завантаження...</div>
                 </div>
-                <div style="display:flex; gap:10px; margin-top:15px;">
-                  <button class="btn btn-primary" style="flex:1" onclick="copyPkg()">📋 Copy All</button>
-                  <button class="btn" style="flex:1" onclick="resetFactory()">🔁 Start New</button>
+                <div style="display:flex; gap:10px; margin-top:15px; flex-direction:column;">
+                  <button class="btn btn-primary" onclick="copyPkg()">📋 Копіювати Все</button>
+                  <button class="btn" onclick="resetFactory()">🔁 Створити Нове</button>
                 </div>
               </div>
             </div>
@@ -199,28 +213,69 @@
         </div>
         
         <div id="f-idle" class="card" style="text-align:center; padding:40px 20px; color:var(--t3);">
-          <div style="font-size:32px; margin-bottom:10px;">🏭</div>
-          <div style="font-weight:600; color:var(--t1);">Система очікує завдання</div>
-          <div style="font-size:12px; margin-top:5px;">Заповни форму зліва або вибери сценарій з черги.</div>
+          <div style="font-size:42px; margin-bottom:10px;">🏭</div>
+          <div style="font-weight:600; color:var(--t1); font-size:18px;">Система очікує завдання</div>
+          <div style="font-size:13px; margin-top:5px; max-width:80%; margin-left:auto; margin-right:auto;">Заповни форму зліва або вибери готовий AI-сценарій з черги.</div>
         </div>
       </div>
     </div>
   </main>
 
   <main id="queue-view">
+    <button class="btn" style="width: max-content; margin-bottom: 15px; padding: 6px 12px; font-size: 12px;" onclick="showView('factory-view')">← Назад до Фабрики</button>
     <div class="card">
-      <div class="card-title">
-        <span>AI Scenario Queue</span>
-        <button class="btn" style="padding:4px 8px; font-size:10px;" onclick="generateQueue()" id="btn-gen-q">🔄 Generate (API)</button>
+      <div class="card-title" style="flex-direction:row; align-items:center;">
+        <span>AI Черга Сценаріїв</span>
       </div>
-      <div id="q-list">Loading queue...</div>
+      
+      <!-- Queue Filters -->
+      <div style="display:flex; gap:10px; margin-bottom:20px; background:var(--bg); padding:15px; border-radius:8px; align-items:flex-end; flex-wrap:wrap;">
+         <div class="field" style="margin-bottom:0; flex:2; min-width:150px;">
+           <label>Ніша (Що продаємо?)</label>
+           <select id="q-niche">
+             <option value="pest control">Боротьба зі шкідниками</option>
+             <option value="pet supplies">Товари для тварин</option>
+             <option value="skincare & beauty">Краса та догляд (Skincare)</option>
+             <option value="home security">Домашня безпека</option>
+             <option value="solar energy">Сонячна енергія</option>
+             <option value="lawn & garden">Сад і Город</option>
+             <option value="health supplements">Здоров'я і БАДи</option>
+             <option value="kitchen gadgets">Кухонні Гаджети</option>
+             <option value="make money online">Заробіток онлайн (MMO)</option>
+           </select>
+         </div>
+         <div class="field" style="margin-bottom:0; flex:1; min-width:100px;">
+           <label>Ринок</label>
+           <select id="q-market">
+             <option value="AU">AU (Австралія)</option>
+             <option value="US">US (США)</option>
+             <option value="UK">UK (Британія)</option>
+             <option value="CA">CA (Канада)</option>
+           </select>
+         </div>
+         <button class="btn" style="flex:1; min-width:120px; background:var(--green-bg); color:var(--green); border-color:var(--green-bd);" onclick="generateQueue()" id="btn-gen-q">
+           <span class="icon">🔄</span> Генерація
+         </button>
+      </div>
+
+      <div id="q-list">Натисни "Генерація", щоб створити ідеї для обраної ніші та ринку.</div>
     </div>
   </main>
 
   <script>
     // Navigation
     const views = ['factory-view', 'queue-view'];
-    function showView(id) { views.forEach(v => document.getElementById(v).style.display = v===id?'block':'none'); }
+    function showView(id) { 
+      views.forEach(v => document.getElementById(v).style.display = v === id ? 'block' : 'none'); 
+      if(window.innerWidth < 768) {
+        document.getElementById('nav-btns').classList.remove('active');
+      }
+    }
+    
+    function toggleMobileNav() {
+      document.getElementById('nav-btns').classList.toggle('active');
+    }
+
     function toggleQueue() { showView('queue-view'); loadQueue(); }
     
     function toggleAcc() {
@@ -237,50 +292,54 @@
 
     // Load initial queue
     async function loadQueue() {
-      el('q-list').innerHTML = 'Loading...';
+      el('q-list').innerHTML = 'Завантаження...';
       try {
         const res = await fetch('/api/factory/queue');
         if(!res.ok) throw new Error('API Error');
         const data = await res.json();
         renderQueue(data.scenarios || []);
       } catch (e) {
-        el('q-list').innerHTML = '<div style="color:red">Failed to load queue. Start backend.</div>';
+        el('q-list').innerHTML = '<div style="color:var(--red)">Помилка завантаження черги. Перевір бекенд.</div>';
       }
     }
 
     function renderQueue(list) {
       if(!list.length) {
-        el('q-list').innerHTML = '<div style="text-align:center; padding:20px; color:var(--t3)">Queue empty. Click Generate.</div>';
+        el('q-list').innerHTML = '<div style="text-align:center; padding:20px; color:var(--t3)">Черга порожня. Запусти Генерацію для пошуку ідей.</div>';
         return;
       }
-      el('q-list').innerHTML = list.filter(s=>s.status==='pending').map(s => `
+      el('q-list').innerHTML = list.filter(s=>s.status==='pending').sort((a,b)=>b.score-a.score).map(s => `
         <div class="q-item">
           <div class="q-score" style="color:${s.score>=75?'var(--green)':s.score>=55?'var(--amber)':'var(--red)'}; background:color-mix(in srgb, currentColor 10%, transparent)">${s.score}</div>
           <div class="q-main">
             <div class="q-title">${s.topic}</div>
-            <div class="q-meta">${s.product} · ${s.market} · ${s.hook}</div>
+            <div class="q-meta">🔥 <b>${s.product}</b> · Ринок: ${s.market} <br/> 💡 Хук: <i>${s.hook}</i></div>
           </div>
-          <button class="btn btn-primary" onclick="loadScenario('${btoa(encodeURIComponent(JSON.stringify(s)))}')">▶ Fill Form</button>
+          <button class="btn btn-primary" onclick="loadScenario('${btoa(encodeURIComponent(JSON.stringify(s)))}')">▶ Вибрати</button>
         </div>
       `).join('');
     }
 
     async function generateQueue() {
-      el('btn-gen-q').innerHTML = '<span class="spin">↻</span> Generating...';
+      el('btn-gen-q').innerHTML = '<span class="spin">↻</span> Думаю...';
       el('btn-gen-q').disabled = true;
       try {
         const res = await fetch('/api/factory/queue/generate', {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({ count: 5, market: el('f-market').value || 'AU' })
+          body: JSON.stringify({ 
+            count: 5, 
+            market: el('q-market').value || 'AU',
+            niche: el('q-niche').value || 'pest control'
+          })
         });
         const respData = await res.json();
-        if(!res.ok) throw new Error(respData.error || 'Generation failed');
+        if(!res.ok) throw new Error(respData.error || 'Помилка генерації');
         await loadQueue();
       } catch (e) {
-        alert('Помилка: ' + e.message);
+        alert('Помилка генерації: ' + e.message);
       } finally {
-        el('btn-gen-q').innerHTML = '🔄 Generate (API)';
+        el('btn-gen-q').innerHTML = '🔄 Генерація';
         el('btn-gen-q').disabled = false;
       }
     }
@@ -297,15 +356,15 @@
     async function runFactory() {
       const topic = el('f-topic').value.trim();
       const product = el('f-product').value.trim();
-      if(!topic || !product) return alert('Enter topic and product');
+      if(!topic || !product) return alert('Будь ласка, вкажи Тему та Продукт');
 
       el('btn-run').disabled = true;
-      el('btn-run').innerHTML = '<span class="spin">↻</span> Running...';
+      el('btn-run').innerHTML = '<span class="spin">↻</span> Створення відео...';
       el('f-idle').style.display = 'none';
       el('f-result').style.display = 'none';
       el('f-status').style.display = 'block';
       el('prog-log').textContent = '';
-      updateProg(0, 'Initialize job...');
+      updateProg(0, 'Ініціалізація фабрики...');
 
       try {
         const res = await fetch('/api/factory/run', {
@@ -322,7 +381,7 @@
           })
         });
         const data = await res.json();
-        if(!res.ok) throw new Error(data.error || 'Failed to start');
+        if(!res.ok) throw new Error(data.error || 'Не вдалося запустити процес');
         
         currentJobId = data.id;
         pollTimer = setInterval(pollJob, 2000);
@@ -341,13 +400,13 @@
       if(!currentJobId) return stopPoll();
       try {
         const res = await fetch('/api/factory/jobs/' + currentJobId);
-        if(!res.ok) throw new Error('Job read error');
+        if(!res.ok) throw new Error('Помилка перевірки статусу');
         const job = await res.json();
         
-        // Calculate progress roughly
+        // Маппінг статусу для прогрес бару
         const stepMap = {'script_generation':20, 'voice_generation':40, 'clip_fetch':60, 'render_plan':70, 'publish_package':80, 'save_outputs':90, 'completed':100};
         const p = stepMap[job.step] || 10;
-        updateProg(p, 'Step: ' + String(job.step).replace('_', ' '));
+        updateProg(p, 'Етап: ' + String(job.step).replace('_', ' '));
 
         const logs = [...(job.logs||[]), ...(job.warnings||[])].join('\n');
         el('prog-log').textContent = logs;
@@ -365,23 +424,27 @@
     function finishJobWithError(msg) {
       el('btn-run').disabled = false;
       el('btn-run').innerHTML = '🎬 Запустити Фабрику';
-      updateProg(100, 'Error!');
+      updateProg(100, 'Збій системи!');
       el('prog-fill').style.background = 'var(--red)';
-      el('prog-log').textContent += '\n\nERROR: ' + msg;
+      el('prog-log').textContent += '\n\nПОМИЛКА: ' + msg;
     }
 
     function showResult(res) {
       el('btn-run').disabled = false;
       el('btn-run').innerHTML = '🎬 Запустити Фабрику';
       el('prog-fill').style.background = 'var(--green)';
-      updateProg(100, 'Done!');
+      updateProg(100, 'Готово!');
 
       el('f-status').style.display = 'none';
       el('f-result').style.display = 'block';
 
-      el('res-title').textContent = res.title || 'No Title';
-      el('res-caption').textContent = res.caption || 'No Caption';
-      el('res-link').textContent = res.affiliateLink || 'No Link';
+      el('res-title').textContent = res.title || 'Без назви';
+      el('res-caption').textContent = res.caption || 'Текст посту відсутній';
+      
+      // Симуляція перекладу: у майбутньому бекенд буде повертати res.caption_uk 
+      el('res-caption-uk').textContent = res.caption_uk ? "🇺🇦 " + res.caption_uk : "🇺🇦 Переклад посту (очікує оновлення AI-моделі)";
+
+      el('res-link').textContent = res.affiliateLink || 'Посилання не згенеровано';
 
       const vEl = el('res-video');
       const vPh = el('res-video-ph');
@@ -405,9 +468,13 @@
     }
 
     function copyPkg() {
-      const text = [el('res-title').textContent, el('res-caption').textContent, el('res-link').textContent].join('\n\n');
+      const text = [
+        "Title: " + el('res-title').textContent, 
+        "Caption: " + el('res-caption').textContent, 
+        "Link: " + el('res-link').textContent
+      ].join('\n\n');
       navigator.clipboard.writeText(text);
-      alert('Copied to clipboard!');
+      alert('Скопійовано до буфера обміну!');
     }
   </script>
 </body>
