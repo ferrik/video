@@ -281,6 +281,7 @@ async function generateScriptPlan(input) {
       hook: parsed.hook || '',
       cta: parsed.cta || '',
       caption: parsed.caption || '',
+      caption_uk: parsed.caption_uk || '',
       full_voiceover: parsed.full_voiceover || (parsed.scenes || []).map(scene => scene.voiceover).join(' '),
       scenes: Array.isArray(parsed.scenes) && parsed.scenes.length
         ? parsed.scenes
@@ -1129,6 +1130,7 @@ async function executeFactoryJob(jobId, input = {}) {
       videoUrl: renderResult?.publicUrl || null,
       title: scriptPlan.title || input.topic || 'Factory output',
       caption: scriptPlan.caption || '',
+      caption_uk: scriptPlan.caption_uk || '',
       hashtags,
       affiliateLink: publishPlan.output || null,
       publishNotes: `Ready for manual publishing on ${platform}. Target: ${input.market}.`,
