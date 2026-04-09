@@ -57,7 +57,7 @@ video -> clicks -> affiliate sale -> commission
 
 ### Frontend
 
-- single-page interface in [public/index.html](/D:/Antigravity_pinterest/creator-os-backend/public/index.html)
+- single-page interface in `public/index_factory.html` (Primary) and `public/index.html` (Legacy Archive).
 - multi-module control panel for signals, scripts, publishing, evolution, archetypes, and portfolio
 
 ### Backend
@@ -69,9 +69,15 @@ video -> clicks -> affiliate sale -> commission
 
 ### Data layer
 
-- Supabase for auth and cloud sync
+- Supabase for cloud sync (requires `SUPABASE_SERVICE_ROLE_KEY` for server-side writes)
 - local browser storage for some UI state and module data
 - runtime job artifacts stored server-side in `runtime/`
+
+### Auth & Security
+
+- Mutating endpoints (`/api/factory/run`, `/api/factory/queue/generate`, etc.) are protected via `X-Api-Key` when `ADMIN_API_KEY` is set in env.
+- Read-only endpoints (`/api/factory/jobs`) remain public.
+- Server does *not* use `SUPABASE_ANON_KEY` for writes.
 
 ### AI / automation services
 
@@ -229,26 +235,18 @@ http://localhost:3000
 http://localhost:3000/api/automation/status
 ```
 
-## Render deployment
+## Recommended deployment topology
 
-The repository includes [render.yaml](/D:/Antigravity_pinterest/creator-os-backend/render.yaml).
-
-Recommended Render setup:
-
-- Service type: `Blueprint`
-- Build command: `npm install`
-- Start command: `npm start`
-- Health check path: `/health`
+- Render: backend API + runtime processing (`index.js`). Handles auth, generation, and FFmpeg logic.
+- Vercel (optional): frontend UI only. Do not expose server secrets in frontend configuration layers.
 
 Add these environment variables in Render as needed:
 
-- `ANTHROPIC_API_KEY`
+- `ADMIN_API_KEY` (Required to secure POST routes)
+- `OPENAI_API_KEY` / `ANTHROPIC_API_KEY`
 - `ELEVENLABS_API_KEY`
-- `ELEVENLABS_VOICE_ID`
 - `PEXELS_API_KEY`
-- `BUFFER_ACCESS_TOKEN`
-- `YOUTUBE_API_KEY`
-- `TIKTOK_SESSION_ID`
+- `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`
 - `FFMPEG_PATH`
 
 ## Current priority

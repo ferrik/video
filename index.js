@@ -761,9 +761,10 @@ function getSupabaseServerClient() {
   supabaseServerInit = true;
 
   const url = process.env.SUPABASE_URL || process.env.SUPABASE_PROJECT_URL || '';
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || '';
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
   if (!url || !key) {
+    console.warn('[Supabase] Server sync disabled: missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');
     supabaseServerClient = null;
     return null;
   }
@@ -1298,7 +1299,10 @@ app.get('/version', (_req, res) => {
 
 // Public config endpoint — exposes client key for the frontend
 app.get('/api/config', (_req, res) => {
-  res.json({ adminKey: process.env.ADMIN_API_KEY || '' });
+  res.json({ 
+    adminAuthEnabled: Boolean(process.env.ADMIN_API_KEY),
+    appVersion: APP_VERSION 
+  });
 });
 
 app.get('/api/automation/status', async (_req, res) => {

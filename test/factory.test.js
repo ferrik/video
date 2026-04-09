@@ -420,3 +420,65 @@ test('factory API refuses to cancel a completed-like job', async () => {
     });
   }
 });
+
+// --- Security / API Key Auth Flow ---
+test('API key protection - rejects factory endpoints without X-Api-Key', async () => {
+  const OLD_KEY = process.env.ADMIN_API_KEY;
+  process.env.ADMIN_API_KEY = 'test-secret';
+  const server = await startServer(0);
+
+  try {
+    const address = server.address();
+    const baseUrl = `http://127.0.0.1:${address.port}`;
+
+    const res = await fetch(`${baseUrl}/api/factory/run`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        topic: 'Test topic', product: 'Test product',
+        market: 'UK', platforms: ['TikTok']
+      })
+    });
+    
+    assert.strictEqual(res.status, 401);
+    const body = await res.json();
+    assert.match(body.error, /Unauthorized/i);
+  } finally {
+    if (OLD_KEY === undefined) delete process.env.ADMIN_API_KEY;
+    else process.env.ADMIN_API_KEY = OLD_KEY;
+    await new Promise((resolve, reject) => {
+      server.close(error => (error ? reject(error) : resolve()));
+    });
+  }
+});
+
+test('API key protection - accepts factory run with valid X-Api-Key', async () => {
+  const OLD_KEY = process.env.ADMIN_API_KEY;
+  process.env.ADMIN_API_KEY = 'test-secret';
+  const server = await startServer(0);
+
+  try {
+    const address = server.address();
+    const baseUrl = `http://127.0.0.1:${address.port}`;
+
+    const res = await fetch(`${baseUrl}/api/factory/run`, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'X-Api-Key': 'test-secret'
+      },
+      body: JSON.stringify({
+        topic: 'Test topic', product: 'Test product',
+        market: 'UK', platforms: ['TikTok']
+      })
+    });
+    
+    assert.ok([200, 202].includes(res.status), `Expected 200 or 202 but got ${res.status}`);
+  } finally {
+    if (OLD_KEY === undefined) delete process.env.ADMIN_API_KEY;
+    else process.env.ADMIN_API_KEY = OLD_KEY;
+    await new Promise((resolve, reject) => {
+      server.close(error => (error ? reject(error) : resolve()));
+    });
+  }
+});

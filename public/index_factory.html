@@ -291,12 +291,13 @@
     let currentJobId = null;
 
     // API key helper — fetched once from /api/config on boot
-    const API_KEY = (window.__ADMIN_KEY__ || '').trim();
-    // Prefetch key from server (sets window.__ADMIN_KEY__ before any fetch)
+    // Prefetch config from server
     (async () => {
       try {
         const cfg = await fetch('/api/config').then(r => r.json());
-        if (cfg.adminKey) window.__ADMIN_KEY__ = cfg.adminKey;
+        if (cfg.adminAuthEnabled && !window.__ADMIN_KEY__) {
+          window.__ADMIN_KEY__ = prompt('Enter Admin API Key to unlock Factory endpoints:') || '';
+        }
       } catch (_) {}
     })();
     function apiHeaders(extra = {}) {
