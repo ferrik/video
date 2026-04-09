@@ -513,15 +513,20 @@
         el('v-cta').textContent = vs.cta || '';
         
         // Show Score
-        el('v-score').textContent = `🔥 Score: ${res.hook_score || 0}/100`;
+        const scoreEl = el('v-score');
+        if (scoreEl) scoreEl.textContent = `🔥 Score: ${res.hook_score || 0}/100`;
         
         // Show Pool
         const pool = res.hooks_pool || [];
-        el('v-pool').innerHTML = pool.length > 0 
-          ? pool.map(h => `<div style="margin-bottom:4px; padding-left:10px; border-left:2px solid var(--bd)">${h}</div>`).join('')
-          : 'Немає альтернатив';
+        const poolEl = el('v-pool');
+        if (poolEl) {
+          poolEl.innerHTML = pool.length > 0 
+            ? pool.map(h => `<div style="margin-bottom:4px; padding-left:10px; border-left:2px solid var(--bd)">${h}</div>`).join('')
+            : 'Немає альтернатив';
+        }
       } else {
-        el('res-viral-card').style.display = 'none';
+        const viralCard = el('res-viral-card');
+        if (viralCard) viralCard.style.display = 'none';
       }
       
       const scenes = res.scenes || [];

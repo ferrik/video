@@ -163,8 +163,6 @@ function fallbackScriptPlan(input) {
 
   return {
     source: 'fallback',
-    title: `${topic} automation`,
-    caption: `${topic} -> signal -> video -> clicks -> sales`,
     viral_structure: {
       hook: scenes[0].voiceover,
       problem: scenes[1].voiceover,
@@ -172,6 +170,8 @@ function fallbackScriptPlan(input) {
       proof: scenes[3].voiceover,
       cta: scenes[4].voiceover
     },
+    hooks_pool: [scenes[0].voiceover, "Alternative Hook A", "Alternative Hook B"],
+    hook_score: 85,
     full_voiceover: scenes.map(scene => scene.voiceover).join(' '),
     scenes
   };
@@ -1159,6 +1159,13 @@ async function executeFactoryJob(jobId, input = {}) {
     const estDuration = Math.round(wordCount / 2.5); // ~2.5 words per sec
     const qualityScore = (scriptPlan.title?.length > 10 && scriptPlan.hook?.length > 10 && clipResult.assets?.length >= 2) ? 'HIGH' : 'STANDARD';
 
+    let affiliateLink = `https://www.amazon.co.uk/s?k=${encodeURIComponent(input.product || 'affiliate')}&tag=YOUR_TAG`;
+    try {
+      affiliateLink = await generateAffiliateLink(input.product || 'affiliate product');
+    } catch (affErr) {
+      console.warn('Affiliate link generation failed, using fallback:', affErr.message);
+    }
+
     const resultPackage = {
       signalBrief,
       videoUrl: renderResult?.publicUrl || null,
@@ -1168,7 +1175,7 @@ async function executeFactoryJob(jobId, input = {}) {
       hooks_pool: scriptPlan.hooks_pool || [],
       hook_score: scriptPlan.hook_score || 0,
       hashtags,
-      affiliateLink: await generateAffiliateLink(input.product || 'affiliate product'),
+      affiliateLink,
       publishNotes: `Ready for manual publishing on ${platform}. Target: ${input.market}.`,
       voiceUrl: voiceResult?.publicUrl || null,
       metadata: {
