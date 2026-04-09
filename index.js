@@ -379,44 +379,15 @@ async function generateVoiceAsset({ jobId, text, voiceId = ELEVENLABS_VOICE_ID }
 
   const fileName = `${jobId}.mp3`;
   const filePath = path.join(AUDIO_DIR, fileName);
+  const openaiVoice = process.env.OPENAI_TTS_VOICE || 'onyx'; // affordable, confident, neutral
 
-  if (process.env.ELEVENLABS_API_KEY) {
-    try {
-      const response = await axios.post(
-        `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
-        { text, model_id: 'eleven_multilingual_v2' },
-        {
-          headers: {
-            'xi-api-key': process.env.ELEVENLABS_API_KEY,
-            Accept: 'audio/mpeg',
-            'Content-Type': 'application/json'
-          },
-          responseType: 'arraybuffer',
-          timeout: 120000
-        }
-      );
-
-      await saveBuffer(Buffer.from(response.data), filePath);
-
-      return {
-        status: 'completed',
-        provider: 'elevenlabs',
-        filePath,
-        publicUrl: `/runtime/audio/${fileName}`
-      };
-    } catch (error) {
-      const errText = error.response?.data ? error.response.data.toString() : error.message;
-      console.error(`[ElevenLabs API Error]: ${errText.substring(0, 150)}`);
-    }
-  }
-
-  // FALLBACK 1: OpenAI TTS
+  // PRIMARY: OpenAI TTS ($0.015 / 1k chars — 15x cheaper than ElevenLabs)
   if (process.env.OPENAI_API_KEY) {
     try {
-      console.log(`[Factory] 🔄 Attempting OpenAI TTS Fallback for job ${jobId}...`);
+      console.log(`[Factory] 🎙️ OpenAI TTS (${openaiVoice}) → job ${jobId}`);
       const response = await axios.post(
         'https://api.openai.com/v1/audio/speech',
-        { model: 'tts-1', input: text, voice: 'echo' },
+        { model: 'tts-1', input: text, voice: openaiVoice },
         {
           headers: {
             'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
@@ -430,12 +401,43 @@ async function generateVoiceAsset({ jobId, text, voiceId = ELEVENLABS_VOICE_ID }
       return {
         status: 'completed',
         provider: 'openai',
+        voice: openaiVoice,
         filePath,
         publicUrl: `/runtime/audio/${fileName}`
       };
     } catch (e) {
       const errText = e.response?.data ? e.response.data.toString() : e.message;
       console.error(`[OpenAI TTS Error]: ${errText.substring(0, 150)}`);
+    }
+  }
+
+  // FALLBACK: ElevenLabs (high quality, higher cost)
+  if (process.env.ELEVENLABS_API_KEY) {
+    try {
+      console.log(`[Factory] 🔄 ElevenLabs fallback → job ${jobId}`);
+      const response = await axios.post(
+        `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
+        { text, model_id: 'eleven_multilingual_v2' },
+        {
+          headers: {
+            'xi-api-key': process.env.ELEVENLABS_API_KEY,
+            Accept: 'audio/mpeg',
+            'Content-Type': 'application/json'
+          },
+          responseType: 'arraybuffer',
+          timeout: 120000
+        }
+      );
+      await saveBuffer(Buffer.from(response.data), filePath);
+      return {
+        status: 'completed',
+        provider: 'elevenlabs',
+        filePath,
+        publicUrl: `/runtime/audio/${fileName}`
+      };
+    } catch (error) {
+      const errText = error.response?.data ? error.response.data.toString() : error.message;
+      console.error(`[ElevenLabs API Error]: ${errText.substring(0, 150)}`);
     }
   }
 
