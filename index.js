@@ -255,15 +255,24 @@ async function generateScriptPlan(input) {
 
   try {
     let parsed;
-    if (useAnthropic) {
-      const data = await callAnthropic(system, [{ role: 'user', content: user }]);
-      parsed = JSON.parse(cleanClaudeText(data));
-    } else {
-      const content = await callOpenAI([
-        { role: 'system', content: system },
-        { role: 'user', content: user }
-      ]);
-      parsed = JSON.parse(content);
+    try {
+      if (useAnthropic) {
+        const data = await callAnthropic(system, [{ role: 'user', content: user }]);
+        parsed = JSON.parse(cleanClaudeText(data));
+      } else {
+        throw new Error('Anthropic skipped');
+      }
+    } catch (anthropicErr) {
+      console.log('Script plan Anthropic failed/skipped:', anthropicErr.message);
+      if (useOpenAI) {
+        const content = await callOpenAI([
+          { role: 'system', content: system },
+          { role: 'user', content: user }
+        ]);
+        parsed = JSON.parse(cleanClaudeText({ content: [{ text: content }] }));
+      } else {
+        throw new Error('All AI providers failed');
+      }
     }
 
     return {
