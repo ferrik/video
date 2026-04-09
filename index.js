@@ -255,6 +255,7 @@ async function generateScriptPlan(input) {
     'Structure: 1. HOOK (shock, fear, or curiosity) 2. PROBLEM (what is going wrong) 3. SOLUTION (product fixes it) 4. PROOF (why it works) 5. CTA (must push user to click "link in bio").',
     'Also generate overlay text (very short phrases) for each scene.',
     'IMPORTANT: The on_screen_text field is what actually gets written over the video. Make it MAX 5 WORDS, uppercase, aggressive and highly readable.',
+    'Product Focus: Always include the exact BRAND and MODEL in the product field to maximize affiliate link accuracy (e.g., "Ring Video Doorbell 4" instead of "doorbell").',
     'Return ONLY valid JSON including a pool of 3 candidate hooks and a calculated hook_score (0-100).'
   ].join('\n');
 
@@ -629,9 +630,34 @@ function buildRenderArgs({ clipAssets, audioFilePath, outputFilePath, scenes }) 
   return args;
 }
 
+// Mapping of products to Amazon ASINs for maximum conversion (Direct Product Links)
+const PRODUCT_ASIN_MAP = {
+  'ring video doorbell 4': 'B08N5WRWNW',
+  'ring doorbell': 'B08N5WRWNW',
+  'sunpower solar panel': 'B01N2WG4UE',
+  'solar panel': 'B01N2WG4UE',
+  'destructive chewer dog toy': 'B007R1BN56',
+  'dog toy': 'B007R1BN56',
+  'lawn fertilizer': 'B00X797T5W'
+};
+
 async function generateAffiliateLink(product) {
-  const query = encodeURIComponent(product);
-  const longUrl = `https://www.amazon.co.uk/s?k=${query}&tag=YOUR_TAG`;
+  const normalized = (product || '').toLowerCase().trim();
+  const amazonTag = process.env.AMAZON_AFFILIATE_TAG || 'YOUR_TAG';
+  
+  let longUrl;
+  
+  // Try to find direct ASIN link (High Conversion)
+  const asin = PRODUCT_ASIN_MAP[normalized] || Object.keys(PRODUCT_ASIN_MAP).find(k => normalized.includes(k));
+  
+  if (asin) {
+    longUrl = `https://www.amazon.co.uk/dp/${PRODUCT_ASIN_MAP[asin] || asin}/?tag=${amazonTag}`;
+  } else {
+    // Fallback to search link (Medium Conversion)
+    const query = encodeURIComponent(product);
+    longUrl = `https://www.amazon.co.uk/s?k=${query}&tag=${amazonTag}&ref=nb_sb_noss`;
+  }
+
   try {
     const res = await axios.get(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(longUrl)}`, { timeout: 5000 });
     return res.data;
