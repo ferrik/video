@@ -200,8 +200,8 @@
                   </div>
                 </div>
                 <div class="pkg-item">
-                  <div class="pkg-label">Афіліатне Посилання</div>
-                  <div class="pkg-val" id="res-link" style="color:var(--t3); font-family:var(--m)">Завантаження...</div>
+                  <div class="pkg-label">🔗 Монетизація</div>
+                  <div class="pkg-val" id="res-link" style="color:var(--blue); font-family:var(--m); word-break: break-all;">Очікування...</div>
                 </div>
                 <div style="display:flex; gap:10px; margin-top:15px; flex-direction:column;">
                   <button class="btn btn-primary" onclick="copyPkg()">📋 Копіювати Все</button>
@@ -477,7 +477,11 @@
       // Симуляція перекладу: у майбутньому бекенд буде повертати res.caption_uk 
       el('res-caption-uk').textContent = res.caption_uk ? "🇺🇦 " + res.caption_uk : "🇺🇦 Переклад посту (очікує оновлення AI-моделі)";
 
-      el('res-link').textContent = res.affiliateLink || 'Посилання не згенеровано';
+      if (res.affiliateLink) {
+        el('res-link').innerHTML = `<a href="${res.affiliateLink}" target="_blank" style="color:var(--blue);text-decoration:underline;">${res.affiliateLink}</a>`;
+      } else {
+        el('res-link').textContent = 'Посилання не згенеровано';
+      }
 
       const vEl = el('res-video');
       const vPh = el('res-video-ph');

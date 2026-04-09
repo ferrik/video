@@ -243,15 +243,20 @@ async function generateScriptPlan(input) {
   const market = input.market || 'Global';
 
   const system = [
-    'You are a viral short-form video script generator.',
-    'Your goal is NOT to describe a product. Your goal is to STOP the scroll.',
-    'Generate a TikTok / Shorts script using this specific structure, no matter the topic: 1. HOOK (pattern interrupt) 2. PROBLEM (pain point) 3. SOLUTION (product) 4. PROOF (why it works) 5. CTA.',
-    `CRITICAL: Generate all video text (voiceover, on_screen_text, caption) in the primary language/dialect of the target market: ${market}. Provide a localized experience.`,
-    'Return only valid JSON.',
-    'Use concise scene-by-scene voiceover, screen text, and exact search queries for stock clips.',
-    'IMPORTANT: on_screen_text must be MAX 6 WORDS — bold, punchy. This will be the large screen text burned into the video.',
-    'We require exactly 5 scenes mirroring the 5 steps.'
-  ].join(' ');
+    'You are a viral TikTok script generator.',
+    'Your ONLY goal is to stop the scroll.',
+    'Rules:',
+    '- First line must create tension or fear',
+    '- Focus on pain or problem',
+    '- No generic phrases',
+    '- No product description first',
+    '- Speak like real human',
+    '- Max 8 words per line',
+    'Structure: 1. HOOK (shock, fear, or curiosity) 2. PROBLEM (what is going wrong) 3. SOLUTION (product fixes it) 4. PROOF (why it works) 5. CTA (must push user to click "link in bio").',
+    'Also generate overlay text (very short phrases) for each scene.',
+    'IMPORTANT: The on_screen_text field is what actually gets written over the video. Make it MAX 5 WORDS, aggressive and highly readable.',
+    'Return ONLY valid JSON.'
+  ].join('\n');
 
   const user = [
     `Topic: ${topic}`,
@@ -259,10 +264,10 @@ async function generateScriptPlan(input) {
     `Platform: ${platform}`,
     `Target Market: ${market}`,
     `Total duration: ${durationSec} seconds`,
-    'Rules: Aggressive clarity, short sentences, speak like a real person, focus on one idea.',
-    'Generate exactly 5 scenes (hook, problem, solution, proof, cta).',
+    'Task: Generate 3 different hooks internally, pick the absolute best one (highest tension/fear), and use it for scene 1.',
+    'Generate exactly 5 scenes corresponding to the 5 structure steps.',
     'Schema:',
-    '{"title":"string","caption":"string","viral_structure":{"hook":"string","problem":"string","solution":"string","proof":"string","cta":"string"},"scenes":[{"scene_id":1,"voiceover":"string","on_screen_text":"string","search_query":"string","duration_sec":4}]}'
+    '{"title":"string (aggressive hook)","caption":"string","viral_structure":{"hook":"string","problem":"string","solution":"string","proof":"string","cta":"string"},"scenes":[{"scene_id":1,"voiceover":"string","on_screen_text":"string","search_query":"string","duration_sec":4}]}'
   ].join('\n');
 
   try {
@@ -619,6 +624,11 @@ function buildRenderArgs({ clipAssets, audioFilePath, outputFilePath, scenes }) 
   args.push(outputFilePath);
   
   return args;
+}
+
+function generateAffiliateLink(product) {
+  const query = encodeURIComponent(product);
+  return `https://www.amazon.co.uk/s?k=${query}&tag=YOUR_TAG`;
 }
 
 async function isFfmpegAvailable() {
@@ -1146,7 +1156,7 @@ async function executeFactoryJob(jobId, input = {}) {
       caption: scriptPlan.caption || '',
       caption_uk: scriptPlan.caption_uk || '',
       hashtags,
-      affiliateLink: publishPlan.output || null,
+      affiliateLink: generateAffiliateLink(input.product || 'affiliate product'),
       publishNotes: `Ready for manual publishing on ${platform}. Target: ${input.market}.`,
       voiceUrl: voiceResult?.publicUrl || null,
       metadata: {
