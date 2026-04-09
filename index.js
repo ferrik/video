@@ -16,7 +16,6 @@ const execFileAsync = promisify(execFile);
 function checkEnv() {
   const required = ['ANTHROPIC_API_KEY', 'ELEVENLABS_API_KEY', 'PEXELS_API_KEY'];
   const recommended = ['OPENAI_API_KEY'];
-  const missing = required.filter(key => !process.env[required.indexOf(key)]); // Wait, fix this logic
   const missingKeys = required.filter(key => !process.env[key]);
   if (missingKeys.length > 0) {
     console.warn('⚠️  Missing required environment variables:', missingKeys.join(', '));

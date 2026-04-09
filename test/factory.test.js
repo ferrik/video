@@ -54,7 +54,7 @@ test('validateFactoryInput rejects invalid payloads with useful errors', () => {
     market: '',
     platforms: [],
     durationSec: 100,
-    advanced: { scenesCount: 9, renderMode: 'broken' }
+    advanced: { scenesCount: 15, renderMode: 'broken' }
   });
 
   assert.strictEqual(result.ok, false);
@@ -63,7 +63,7 @@ test('validateFactoryInput rejects invalid payloads with useful errors', () => {
   assert.match(result.errors.join(' '), /Market is required/);
   assert.match(result.errors.join(' '), /At least one platform is required/);
   assert.match(result.errors.join(' '), /Duration must be between 6 and 90 seconds/);
-  assert.match(result.errors.join(' '), /Scenes count must be between 1 and 8/);
+  assert.match(result.errors.join(' '), /Scenes count must be between 1 and 12/);
   assert.match(result.errors.join(' '), /Render mode must be either "live" or "dry"/);
 });
 
