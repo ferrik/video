@@ -205,10 +205,23 @@
                 </div>
                 <div style="display:flex; gap:10px; margin-top:15px; flex-direction:column;">
                   <button class="btn btn-primary" onclick="copyPkg()">📋 Копіювати Все</button>
-                  <button class="btn" onclick="resetFactory()">🔁 Створити Нове</button>
                 </div>
               </div>
             </div>
+          </div>
+          
+          <div class="res-card" id="res-viral-card" style="margin-top:15px; display:none;">
+            <div class="card-title" style="color:var(--amber); border-color:var(--amber-bd)">🎬 СЦЕНАРІЙ (Viral Framework)</div>
+            <div style="font-size:12px; line-height:1.6;">
+              <div style="margin-bottom:8px;"><b>HOOK:</b> <span id="v-hook" style="color:var(--t1)">...</span></div>
+              <div style="margin-bottom:8px;"><b>PROBLEM:</b> <span id="v-problem" style="color:var(--t1)">...</span></div>
+              <div style="margin-bottom:8px;"><b>SOLUTION:</b> <span id="v-solution" style="color:var(--t1)">...</span></div>
+              <div style="margin-bottom:8px;"><b>PROOF:</b> <span id="v-proof" style="color:var(--t1)">...</span></div>
+              <div style="margin-bottom:8px;"><b>CTA:</b> <span id="v-cta" style="color:var(--t1)">...</span></div>
+            </div>
+            
+            <div class="card-title" style="color:var(--blue); border-color:var(--blue-bd); margin-top:20px;">📺 Overlay Text (На екрані)</div>
+            <div id="v-overlays" style="font-size:12px; color:var(--t1); line-height:1.6; white-space:pre-wrap;">...</div>
           </div>
         </div>
         
@@ -475,6 +488,27 @@
       } else {
          vEl.style.display = 'none';
          vPh.style.display = 'flex';
+      }
+
+      // Populate Viral Structure
+      const vs = res.viral_structure || res.script;
+      if (vs && vs.hook) {
+        el('res-viral-card').style.display = 'block';
+        el('v-hook').textContent = vs.hook || '';
+        el('v-problem').textContent = vs.problem || '';
+        el('v-solution').textContent = vs.solution || '';
+        el('v-proof').textContent = vs.proof || '';
+        el('v-cta').textContent = vs.cta || '';
+      } else {
+        el('res-viral-card').style.display = 'none';
+      }
+      
+      const scenes = res.scenes || [];
+      if (scenes.length > 0) {
+        const textArr = scenes.map(s => `- ${s.on_screen_text}`);
+        el('v-overlays').textContent = textArr.join('\n');
+      } else {
+        el('v-overlays').textContent = 'Відсутній текст';
       }
     }
 

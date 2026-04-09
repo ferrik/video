@@ -154,42 +154,24 @@ function fallbackScriptPlan(input) {
   const product = input.product || 'affiliate product';
   const platform = input.platform || 'TikTok';
   const scenes = [
-    {
-      scene_id: 1,
-      voiceover: `Stop scrolling. Here is the fastest way to make ${topic} impossible to ignore.`,
-      on_screen_text: `The ${topic} mistake`,
-      search_query: `${topic} problem close up`,
-      duration_sec: 6
-    },
-    {
-      scene_id: 2,
-      voiceover: `Most people keep doing the obvious thing, but the real fix starts with one hidden detail.`,
-      on_screen_text: 'What everyone misses',
-      search_query: `${topic} hidden issue`,
-      duration_sec: 6
-    },
-    {
-      scene_id: 3,
-      voiceover: `This is where ${product} becomes useful, because it removes friction and saves time immediately.`,
-      on_screen_text: product,
-      search_query: `${product} product demo`,
-      duration_sec: 6
-    },
-    {
-      scene_id: 4,
-      voiceover: `If you want the exact setup, check the link and copy this workflow for ${platform}.`,
-      on_screen_text: 'Link in bio',
-      search_query: `${platform} phone scrolling`,
-      duration_sec: 6
-    }
+    { scene_id: 1, voiceover: `Stop scrolling. Here is the fastest way to fix ${topic}.`, on_screen_text: `The ${topic} mistake`, search_query: `${topic} problem close up`, duration_sec: 4 },
+    { scene_id: 2, voiceover: `Most people keep doing the obvious thing, but the real fix starts with one hidden detail.`, on_screen_text: 'What everyone misses', search_query: `${topic} hidden issue`, duration_sec: 4 },
+    { scene_id: 3, voiceover: `This is where ${product} comes in. It removes the friction completely.`, on_screen_text: `${product} solution`, search_query: `${product} product demo`, duration_sec: 4 },
+    { scene_id: 4, voiceover: `It takes literally seconds to apply and you see the difference instantly.`, on_screen_text: 'Works in seconds', search_query: `smiling person using ${product}`, duration_sec: 5 },
+    { scene_id: 5, voiceover: `If you want the exact setup, check the link right now.`, on_screen_text: 'Link in bio', search_query: `smartphone interacting`, duration_sec: 4 }
   ];
 
   return {
     source: 'fallback',
-    title: `${topic} automation hook`,
-    hook: scenes[0].voiceover,
-    cta: `Use ${product} and test this angle today.`,
+    title: `${topic} automation`,
     caption: `${topic} -> signal -> video -> clicks -> sales`,
+    viral_structure: {
+      hook: scenes[0].voiceover,
+      problem: scenes[1].voiceover,
+      solution: scenes[2].voiceover,
+      proof: scenes[3].voiceover,
+      cta: scenes[4].voiceover
+    },
     full_voiceover: scenes.map(scene => scene.voiceover).join(' '),
     scenes
   };
@@ -261,13 +243,14 @@ async function generateScriptPlan(input) {
   const market = input.market || 'Global';
 
   const system = [
-    'You generate short-form video plans for a fully automated content pipeline.',
-    `CRITICAL: Generate all video text (voiceover, on_screen_text, hook, caption) in the primary language/dialect of the target market: ${market}. Provide a localized experience.`,
+    'You are a viral short-form video script generator.',
+    'Your goal is NOT to describe a product. Your goal is to STOP the scroll.',
+    'Generate a TikTok / Shorts script using this specific structure, no matter the topic: 1. HOOK (pattern interrupt) 2. PROBLEM (pain point) 3. SOLUTION (product) 4. PROOF (why it works) 5. CTA.',
+    `CRITICAL: Generate all video text (voiceover, on_screen_text, caption) in the primary language/dialect of the target market: ${market}. Provide a localized experience.`,
     'Return only valid JSON.',
-    'Use concise scene-by-scene voiceover, screen text, and search queries for stock clips.',
-    'IMPORTANT: on_screen_text must be MAX 6 WORDS — bold, punchy, no full sentences.',
-    'Example on_screen_text: "Why spiders enter your home" or "No chemicals needed".',
-    'The on_screen_text will be displayed as a large text caption burned directly into the video frame.'
+    'Use concise scene-by-scene voiceover, screen text, and exact search queries for stock clips.',
+    'IMPORTANT: on_screen_text must be MAX 6 WORDS — bold, punchy. This will be the large screen text burned into the video.',
+    'We require exactly 5 scenes mirroring the 5 steps.'
   ].join(' ');
 
   const user = [
@@ -276,10 +259,10 @@ async function generateScriptPlan(input) {
     `Platform: ${platform}`,
     `Target Market: ${market}`,
     `Total duration: ${durationSec} seconds`,
-    `Scene count: ${scenesCount}`,
-    'Rules: on_screen_text = max 6 words, short punchy hook per scene, like TikTok captions.',
+    'Rules: Aggressive clarity, short sentences, speak like a real person, focus on one idea.',
+    'Generate exactly 5 scenes (hook, problem, solution, proof, cta).',
     'Schema:',
-    '{"title":"string","hook":"string","cta":"string","caption":"string","caption_uk":"string (Ukrainian translation of caption)","full_voiceover":"string","scenes":[{"scene_id":1,"voiceover":"string","on_screen_text":"string","search_query":"string","duration_sec":6}]}'
+    '{"title":"string","caption":"string","viral_structure":{"hook":"string","problem":"string","solution":"string","proof":"string","cta":"string"},"scenes":[{"scene_id":1,"voiceover":"string","on_screen_text":"string","search_query":"string","duration_sec":4}]}'
   ].join('\n');
 
   try {
@@ -306,15 +289,14 @@ async function generateScriptPlan(input) {
 
     return {
       source: useAnthropic ? 'anthropic' : 'openai',
-      title: parsed.title || `${topic} automation hook`,
-      hook: parsed.hook || '',
-      cta: parsed.cta || '',
+      title: parsed.title || `${topic} automation`,
       caption: parsed.caption || '',
       caption_uk: parsed.caption_uk || '',
+      viral_structure: parsed.viral_structure || {},
       full_voiceover: parsed.full_voiceover || (parsed.scenes || []).map(scene => scene.voiceover).join(' '),
       scenes: Array.isArray(parsed.scenes) && parsed.scenes.length
         ? parsed.scenes
-        : splitScenes(parsed.full_voiceover || topic, scenesCount)
+        : splitScenes(topic, scenesCount)
     };
   } catch (error) {
     console.warn('Script generation fallback:', error.message);
