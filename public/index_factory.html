@@ -414,10 +414,10 @@
         const logs = [...(job.logs||[]), ...(job.warnings||[])].join('\n');
         el('prog-log').textContent = logs;
 
-        if(job.status === 'completed' || job.status === 'failed') {
+        if(job.status === 'completed' || job.status === 'failed' || job.status === 'requires_follow_up') {
           stopPoll();
           if(job.status === 'failed') finishJobWithError(job.error);
-          else showResult(job.result);
+          else showResult(job.resultPackage || job.result || {});
         }
       } catch (e) { stopPoll(); finishJobWithError(e.message); }
     }
