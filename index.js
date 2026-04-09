@@ -40,8 +40,8 @@ const ELEVENLABS_VOICE_ID = process.env.ELEVENLABS_VOICE_ID || '21m00Tcm4TlvDq8i
 let FFMPEG_PATH = process.env.FFMPEG_PATH || 'ffmpeg';
 
 try {
-  const ffmpeg = require('ffmpeg-static');
-  if (ffmpeg) FFMPEG_PATH = ffmpeg;
+  const ffmpeg = require('@ffmpeg-installer/ffmpeg');
+  if (ffmpeg && ffmpeg.path) FFMPEG_PATH = ffmpeg.path;
 } catch (e) {
   console.log('Using system ffmpeg or FFMPEG_PATH env var.');
 }
