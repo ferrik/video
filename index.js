@@ -1524,15 +1524,15 @@ app.post('/api/factory/queue/generate', async (req, res) => {
         const data = await callAnthropic(system, [{ role: 'user', content: user }], ANTHROPIC_MODEL, 2000);
         parsed = JSON.parse(cleanClaudeText(data));
       } else {
-        throw new Error('Anthropic skipped');
+        throw new Error('Пропуск Anthropic (відсутній ключ)');
       }
     } catch (anthropicErr) {
       console.log('Anthropic failed/skipped, trying OpenAI...', anthropicErr.message);
       if (useOpenAI) {
         const content = await callOpenAI([{ role: 'system', content: system }, { role: 'user', content: user }]);
-        parsed = JSON.parse(content);
+        parsed = JSON.parse(cleanClaudeText({ content: [{ text: content }] }));
       } else {
-        throw new Error('All AI providers failed. Check your API keys or billing limits.');
+        throw new Error('Усі AI-моделі недоступні (Або вичерпано ліміти балансу). Перевірте налаштування ключів API.');
       }
     }
 
@@ -1552,7 +1552,7 @@ app.post('/api/factory/queue/generate', async (req, res) => {
     res.json({ scenarios, count: scenarios.length });
   } catch (error) {
     console.error('Queue generation error:', error.message);
-    jsonError(res, 500, 'Failed to generate queue', error.message);
+    jsonError(res, 500, 'Збій під час створення списку ідей', error.message);
   }
 });
 

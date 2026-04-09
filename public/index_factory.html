@@ -334,7 +334,10 @@
           })
         });
         const respData = await res.json();
-        if(!res.ok) throw new Error(respData.error || 'Помилка генерації');
+        if(!res.ok) {
+          const detailStr = respData.details ? ` (${respData.details})` : '';
+          throw new Error((respData.error || 'Помилка генерації') + detailStr);
+        }
         await loadQueue();
       } catch (e) {
         alert('Помилка генерації: ' + e.message);
