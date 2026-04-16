@@ -448,12 +448,22 @@ async function executeFactoryJob(jobId, input = {}) {
     const estDuration = Math.round(wordCount / 2.5); // ~2.5 words per sec
     const qualityScore = (scriptPlan.title?.length > 10 && scriptPlan.hook?.length > 10 && clipResult.assets?.length >= 2) ? 'HIGH' : 'STANDARD';
 
-    let affiliateLink = `https://www.amazon.co.uk/s?k=${encodeURIComponent(input.product || 'affiliate')}&tag=YOUR_TAG`;
+    const market = input.market || 'UK';
+    const baseUrl = process.env.PUBLIC_BASE_URL || '';
+    // Fallback uses correct market storefront, not hardcoded UK
+    const { buildAmazonUrl } = require('./services/monetization');
+    let affiliateLink = buildAmazonUrl(input.product || 'affiliate product', market);
     try {
-      affiliateLink = await generateAffiliateLink(input.product || 'affiliate product');
+      affiliateLink = await generateAffiliateLink(
+        input.product || 'affiliate product',
+        jobId,
+        market,
+        baseUrl
+      );
     } catch (affErr) {
       console.warn('Affiliate link generation failed, using fallback:', affErr.message);
     }
+
 
     const resultPackage = {
       signalBrief,
