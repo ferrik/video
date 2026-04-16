@@ -15,6 +15,7 @@ const { generateVoiceAsset, generateClipAssets } = require('./services/media.ser
 const { renderVideoAsset, buildRenderArgs } = require('./services/render.service');
 const { generateAffiliateLink, affiliateRedirectHandler, getClickStats } = require('./services/monetization');
 const { writeJob, readJob, listJobs, updateJob } = require('./services/jobs.store');
+const { getWinners, cloneWinner, getRanking, DEFAULT_WINNER_THRESHOLD } = require('./services/winner.engine');
 
 function checkEnv() {
   const required = ['ANTHROPIC_API_KEY', 'ELEVENLABS_API_KEY', 'PEXELS_API_KEY'];
@@ -805,6 +806,51 @@ app.get('/api/clicks', async (req, res) => {
     jsonError(res, 500, 'Failed to read click stats', err.message);
   }
 });
+
+/* ── Winner Engine ── */
+
+// GET /api/winners — list jobs that crossed the click threshold
+app.get('/api/winners', async (req, res) => {
+  try {
+    const threshold = Number(req.query.threshold) || DEFAULT_WINNER_THRESHOLD;
+    const winners = await getWinners(threshold);
+    res.json({ threshold, count: winners.length, winners });
+  } catch (err) {
+    jsonError(res, 500, 'Failed to get winners', err.message);
+  }
+});
+
+// GET /api/winners/ranking — combined score ranking (clicks + hook score)
+app.get('/api/winners/ranking', async (req, res) => {
+  try {
+    const ranking = await getRanking(Number(req.query.limit) || 20);
+    res.json({ count: ranking.length, ranking });
+  } catch (err) {
+    jsonError(res, 500, 'Failed to get ranking', err.message);
+  }
+});
+
+// POST /api/winners/:jobId/clone — scale a winner by cloning with alternate hooks
+app.post('/api/winners/:jobId/clone', requireApiKey, async (req, res) => {
+  const { jobId } = req.params;
+  const n = Number(req.body?.variants) || 3;
+  try {
+    const variants = await cloneWinner(
+      jobId,
+      n,
+      executeFactoryJob,   // runner
+      createFactoryJob     // creator
+    );
+    res.json({
+      clonedFrom: jobId,
+      variantsQueued: variants.filter(v => v.status === 'queued').length,
+      variants
+    });
+  } catch (err) {
+    jsonError(res, 400, 'Clone failed', err.message);
+  }
+});
+
 
 /* ── / route ── */
 app.get('/', (_req, res) => {

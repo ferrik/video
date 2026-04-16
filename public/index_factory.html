@@ -88,6 +88,21 @@
     /* Animations */
     .spin { display:inline-block; animation:spin 1s linear infinite; }
     @keyframes spin { 100% { transform:rotate(360deg); } }
+
+    /* Winners Dashboard */
+    #winners-view { display:none; }
+    .winner-item { background:var(--s1); border:1px solid var(--amber-bd); border-radius:10px; padding:16px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; gap:16px; }
+    .winner-item:hover { border-color:var(--amber); }
+    .winner-badge { background:var(--amber-bg); color:var(--amber); border:1px solid var(--amber-bd); font-family:var(--m); font-size:12px; padding:4px 10px; border-radius:6px; white-space:nowrap; }
+    .winner-info { flex:1; min-width:0; }
+    .winner-title { font-weight:700; font-size:15px; margin-bottom:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .winner-meta { font-family:var(--m); font-size:11px; color:var(--t2); }
+    .rank-item { background:var(--s1); border:1px solid var(--b1); border-radius:8px; padding:12px 16px; margin-bottom:8px; display:flex; align-items:center; gap:14px; }
+    .rank-num { width:28px; height:28px; border-radius:6px; background:var(--s2); color:var(--t2); display:flex; align-items:center; justify-content:center; font-family:var(--m); font-size:12px; font-weight:700; flex-shrink:0; }
+    .rank-num.top { background:var(--amber-bg); color:var(--amber); border:1px solid var(--amber-bd); }
+    .rank-info { flex:1; min-width:0; }
+    .rank-title { font-size:14px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .rank-scores { font-family:var(--m); font-size:11px; color:var(--t3); margin-top:2px; }
   </style>
 </head>
 <body>
@@ -97,6 +112,7 @@
     <button class="hamburger" onclick="toggleMobileNav()">☰</button>
     <div class="nav-btns" id="nav-btns">
       <button class="btn" onclick="toggleQueue()">📋 Сценарії (Черга)</button>
+      <button class="btn" id="nav-winners" onclick="toggleWinners()" style="color:var(--amber)">🏆 Winners</button>
       <a href="/legacy" class="btn">🔬 Старі Додатки</a>
     </div>
   </header>
@@ -283,9 +299,29 @@
     </div>
   </main>
 
+  <!-- Winners Dashboard -->
+  <main id="winners-view">
+    <button class="btn" style="width:max-content; margin-bottom:15px; padding:6px 12px; font-size:12px;" onclick="toggleWinners()">← Назад до Фабрики</button>
+
+    <div class="card">
+      <div class="card-title" style="color:var(--amber); border-color:var(--amber-bd);">
+        <span>🏆 Переможці — відео з реальними кліками</span>
+        <button class="btn" style="width:auto; padding:4px 10px; font-size:11px;" onclick="loadWinners()">↻ Оновити</button>
+      </div>
+      <p style="font-size:12px; color:var(--t3); margin-bottom:15px;">Відео, що отримали достатньо кліків через /go/ посилання. Натисни "Клонувати" — і система автоматично запустить 3 варіанти з альтернативними хуками.</p>
+      <div id="winners-list"></div>
+    </div>
+
+    <div class="card" style="margin-top:20px;">
+      <div class="card-title">📊 Загальний Рейтинг (Clicks × 10 + Hook Score)</div>
+      <p style="font-size:12px; color:var(--t3); margin-bottom:15px;">Комбінована оцінка: реальні кліки мають вагу 10x, бо це справжні дані, а не прогноз моделі.</p>
+      <div id="ranking-list"></div>
+    </div>
+  </main>
+
   <script>
     // Navigation
-    const views = ['factory-view', 'queue-view'];
+    const views = ['factory-view', 'queue-view', 'winners-view'];
     function showView(id) { 
       views.forEach(v => document.getElementById(v).style.display = v === id ? 'block' : 'none'); 
       if(window.innerWidth < 768) {
@@ -555,6 +591,76 @@
       ].join('\n\n');
       navigator.clipboard.writeText(text);
       alert('Скопійовано до буфера обміну!');
+    }
+
+    // ── Winners Dashboard ────────────────────────────────────────────────────
+    function toggleWinners() { showView('winners-view'); loadWinners(); }
+
+    async function loadWinners() {
+      el('winners-list').innerHTML = '<div style="color:var(--t3);font-size:13px">⏳ Завантаження...</div>';
+      el('ranking-list').innerHTML = '<div style="color:var(--t3);font-size:13px">⏳ Завантаження...</div>';
+      try {
+        const [wRes, rRes] = await Promise.all([
+          fetch('/api/winners').then(r => r.json()),
+          fetch('/api/winners/ranking').then(r => r.json())
+        ]);
+
+        // Winners
+        const winners = wRes.winners || [];
+        if (!winners.length) {
+          el('winners-list').innerHTML = `<div style="color:var(--t3);font-size:13px;padding:12px">Ще немає переможців (поріг: ${wRes.threshold} кліків). Генеруй відео і перевір ще раз.</div>`;
+        } else {
+          el('winners-list').innerHTML = winners.map(w => `
+            <div class="winner-item">
+              <div class="winner-badge">🔥 ${w.clicks} кліків</div>
+              <div class="winner-info">
+                <div class="winner-title">${w.topic || w.jobId}</div>
+                <div class="winner-meta">${w.product} · Hook Score: ${w.hookScore}/100 · ${w.jobId}</div>
+              </div>
+              <button class="btn btn-primary" style="width:auto;white-space:nowrap" onclick="cloneWinner('${w.jobId}', this)">
+                ⚡ Клонувати (×3)
+              </button>
+            </div>`).join('');
+        }
+
+        // Ranking
+        const ranking = rRes.ranking || [];
+        if (!ranking.length) {
+          el('ranking-list').innerHTML = '<div style="color:var(--t3);font-size:13px;padding:12px">Немає даних. Запусти кілька задач.</div>';
+        } else {
+          el('ranking-list').innerHTML = ranking.map((r, i) => `
+            <div class="rank-item">
+              <div class="rank-num ${i < 3 ? 'top' : ''}">${i + 1}</div>
+              <div class="rank-info">
+                <div class="rank-title">${r.topic || r.jobId}</div>
+                <div class="rank-scores">Clicks: ${r.clicks} &nbsp;·&nbsp; Hook: ${r.hookScore} &nbsp;·&nbsp; Score: ${r.combinedScore} ${r.isWinner ? '🏆' : ''}</div>
+              </div>
+            </div>`).join('');
+        }
+      } catch(e) {
+        el('winners-list').innerHTML = `<div style="color:var(--red);font-size:13px">Помилка: ${e.message}</div>`;
+      }
+    }
+
+    async function cloneWinner(jobId, btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spin">⏳</span> Клонування...';
+      try {
+        const apiKey = localStorage.getItem('adminApiKey') || '';
+        const res = await fetch(`/api/winners/${jobId}/clone`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Api-Key': apiKey },
+          body: JSON.stringify({ variants: 3 })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Server error');
+        btn.innerHTML = `✅ ${data.variantsQueued} варіанти в черзі`;
+        btn.style.color = 'var(--green)';
+      } catch(e) {
+        btn.innerHTML = '❌ Помилка';
+        btn.disabled = false;
+        alert('Clone failed: ' + e.message);
+      }
     }
   </script>
 </body>

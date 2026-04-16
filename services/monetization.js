@@ -43,7 +43,10 @@ async function readClicks() {
 
 async function recordClick({ linkId, jobId, product, url }) {
   const clicks = await readClicks();
-  clicks.push({ linkId, jobId, product, url, clickedAt: new Date().toISOString() });
+  const entry = { linkId, jobId, product, url, clickedAt: new Date().toISOString() };
+  clicks.push(entry);
+  // Structured log — visible in Render dashboard
+  console.log('[CLICK]', JSON.stringify({ linkId, jobId, product, ts: entry.clickedAt }));
   // Keep only last 5000 clicks to prevent unbounded growth
   const trimmed = clicks.slice(-5000);
   await fs.mkdir(RUNTIME_DIR, { recursive: true });
