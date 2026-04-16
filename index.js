@@ -5,13 +5,16 @@ const rateLimit = require('express-rate-limit');
 const dotenv = require('dotenv');
 const fs = require('fs/promises');
 const path = require('path');
-const { promisify } = require('util');
-const { execFile } = require('child_process');
-const { createClient } = require('@supabase/supabase-js');
 const packageJson = require('./package.json');
 
 dotenv.config();
-const execFileAsync = promisify(execFile);
+
+// ── Service modules ───────────────────────────────────────────────────────────
+const { generateScriptPlan, generateSignalBrief, callAnthropic, callOpenAI, cleanClaudeText } = require('./services/ai.service');
+const { generateVoiceAsset, generateClipAssets } = require('./services/media.service');
+const { renderVideoAsset, buildRenderArgs } = require('./services/render.service');
+const { generateAffiliateLink, affiliateRedirectHandler, getClickStats } = require('./services/monetization');
+const { writeJob, readJob, listJobs, updateJob } = require('./services/jobs.store');
 
 function checkEnv() {
   const required = ['ANTHROPIC_API_KEY', 'ELEVENLABS_API_KEY', 'PEXELS_API_KEY'];
@@ -105,13 +108,14 @@ function uid(prefix = 'job') {
 }
 
 async function ensureRuntimeDirs() {
+  const RUNTIME_DIR = path.join(__dirname, 'runtime');
   await Promise.all([
     fs.mkdir(RUNTIME_DIR, { recursive: true }),
-    fs.mkdir(AUDIO_DIR, { recursive: true }),
-    fs.mkdir(CLIP_DIR, { recursive: true }),
-    fs.mkdir(JOB_DIR, { recursive: true }),
-    fs.mkdir(RENDER_DIR, { recursive: true }),
-    fs.mkdir(QUEUE_DIR, { recursive: true })
+    fs.mkdir(path.join(RUNTIME_DIR, 'audio'), { recursive: true }),
+    fs.mkdir(path.join(RUNTIME_DIR, 'clips'), { recursive: true }),
+    fs.mkdir(path.join(RUNTIME_DIR, 'jobs'), { recursive: true }),
+    fs.mkdir(path.join(RUNTIME_DIR, 'renders'), { recursive: true }),
+    fs.mkdir(path.join(RUNTIME_DIR, 'queue'), { recursive: true })
   ]);
 }
 
@@ -119,605 +123,11 @@ function jsonError(res, status, error, details) {
   return res.status(status).json({ error, ...(details ? { details } : {}) });
 }
 
-function cleanClaudeText(data) {
-  const text = data.content?.map(block => block.text || '').join('') || '';
-  return text.replace(/```json|```/g, '').trim();
-}
+// Voice generation handled by services/media.service.js
 
-function splitScenes(text, count = 4) {
-  const chunks = text
-    .split(/[.!?]\s+/)
-    .map(chunk => chunk.trim())
-    .filter(Boolean);
+// Render handled by services/render.service.js
+// Affiliate + monetization handled by services/monetization.js
 
-  if (!chunks.length) {
-    return Array.from({ length: count }, (_, index) => ({
-      scene_id: index + 1,
-      voiceover: `Scene ${index + 1} about the topic.`,
-      on_screen_text: `Scene ${index + 1}`,
-      search_query: 'product demo',
-      duration_sec: 6
-    }));
-  }
-
-  return chunks.slice(0, count).map((chunk, index) => ({
-    scene_id: index + 1,
-    voiceover: chunk,
-    on_screen_text: chunk.slice(0, 70),
-    search_query: chunk.slice(0, 60),
-    duration_sec: 6
-  }));
-}
-
-function fallbackScriptPlan(input) {
-  const topic = input.topic || 'AI content system';
-  const product = input.product || 'affiliate product';
-  const platform = input.platform || 'TikTok';
-  const scenes = [
-    { scene_id: 1, voiceover: `Stop scrolling. Here is the fastest way to fix ${topic}.`, on_screen_text: `The ${topic} mistake`, search_query: `${topic} problem close up`, duration_sec: 4 },
-    { scene_id: 2, voiceover: `Most people keep doing the obvious thing, but the real fix starts with one hidden detail.`, on_screen_text: 'What everyone misses', search_query: `${topic} hidden issue`, duration_sec: 4 },
-    { scene_id: 3, voiceover: `This is where ${product} comes in. It removes the friction completely.`, on_screen_text: `${product} solution`, search_query: `${product} product demo`, duration_sec: 4 },
-    { scene_id: 4, voiceover: `It takes literally seconds to apply and you see the difference instantly.`, on_screen_text: 'Works in seconds', search_query: `smiling person using ${product}`, duration_sec: 5 },
-    { scene_id: 5, voiceover: `If you want the exact setup, check the link right now.`, on_screen_text: 'Link in bio', search_query: `smartphone interacting`, duration_sec: 4 }
-  ];
-
-  return {
-    source: 'fallback',
-    viral_structure: {
-      hook: scenes[0].voiceover,
-      problem: scenes[1].voiceover,
-      solution: scenes[2].voiceover,
-      proof: scenes[3].voiceover,
-      cta: scenes[4].voiceover
-    },
-    hooks_pool: [scenes[0].voiceover, "Alternative Hook A", "Alternative Hook B"],
-    hook_score: 85,
-    full_voiceover: scenes.map(scene => scene.voiceover).join(' '),
-    scenes
-  };
-}
-
-async function callAnthropic(system, messages, model = ANTHROPIC_MODEL, maxTokens = 2500) {
-  if (!process.env.ANTHROPIC_API_KEY) {
-    throw new Error('ANTHROPIC_API_KEY not set on server');
-  }
-
-  const response = await axios.post(
-    'https://api.anthropic.com/v1/messages',
-    {
-      model,
-      max_tokens: maxTokens,
-      system,
-      messages
-    },
-    {
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': process.env.ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01'
-      },
-      timeout: 60000
-    }
-  );
-
-  return response.data;
-}
-
-async function callOpenAI(messages, model = OPENAI_MODEL) {
-  if (!process.env.OPENAI_API_KEY) {
-    throw new Error('OPENAI_API_KEY not set on server');
-  }
-
-  const response = await axios.post(
-    'https://api.openai.com/v1/chat/completions',
-    {
-      model,
-      messages,
-      response_format: { type: "json_object" }
-    },
-    {
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
-      },
-      timeout: 60000
-    }
-  );
-
-  return response.data.choices[0].message.content;
-}
-
-async function generateScriptPlan(input) {
-  const useAnthropic = !!process.env.ANTHROPIC_API_KEY;
-  const useOpenAI = !!process.env.OPENAI_API_KEY;
-
-  if (!useAnthropic && !useOpenAI) {
-    return fallbackScriptPlan(input);
-  }
-
-  const topic = input.topic || 'AI content system';
-  const product = input.product || 'affiliate product';
-  const platform = input.platform || 'TikTok';
-  const durationSec = input.durationSec || 24;
-  const scenesCount = input.scenesCount || 4;
-  const market = input.market || 'Global';
-
-  const system = [
-    'You are a viral TikTok script generator.',
-    'Your ONLY goal is to stop the scroll.',
-    'Rules:',
-    '- First line must create tension or fear',
-    '- Focus on pain or problem',
-    '- No generic phrases',
-    '- No product description first',
-    '- Speak like real human',
-    '- Max 8 words per line',
-    'Structure: 1. HOOK (shock, fear, or curiosity) 2. PROBLEM (what is going wrong) 3. SOLUTION (product fixes it) 4. PROOF (why it works) 5. CTA (must push user to click "link in bio").',
-    'Also generate overlay text (very short phrases) for each scene.',
-    'IMPORTANT: The on_screen_text field is what actually gets written over the video. Make it MAX 5 WORDS, uppercase, aggressive and highly readable.',
-    'Product Focus: Always include the exact BRAND and MODEL in the product field to maximize affiliate link accuracy (e.g., "Ring Video Doorbell 4" instead of "doorbell").',
-    'Return ONLY valid JSON including a pool of 3 candidate hooks and a calculated hook_score (0-100).'
-  ].join('\n');
-
-  const user = [
-    `Topic: ${topic}`,
-    `Product: ${product}`,
-    `Platform: ${platform}`,
-    `Target Market: ${market}`,
-    `Total duration: ${durationSec} seconds`,
-    'Task: Generate 3 different hooks internally, pick the absolute best one (highest tension/fear), and use it for scene 1. Also include all 3 in "hooks_pool".',
-    'Generate exactly 5 scenes corresponding to the 5 structure steps.',
-    'Schema:',
-    '{"title":"string (aggressive hook)","caption":"string","hooks_pool":["string","string","string"],"hook_score":95,"viral_structure":{"hook":"string","problem":"string","solution":"string","proof":"string","cta":"string"},"scenes":[{"scene_id":1,"voiceover":"string","on_screen_text":"string","search_query":"string","duration_sec":4}]}'
-  ].join('\n');
-
-  try {
-    let parsed;
-    try {
-      if (useAnthropic) {
-        const data = await callAnthropic(system, [{ role: 'user', content: user }]);
-        parsed = JSON.parse(cleanClaudeText(data));
-      } else {
-        throw new Error('Anthropic skipped');
-      }
-    } catch (anthropicErr) {
-      console.log('Script plan Anthropic failed/skipped:', anthropicErr.message);
-      if (useOpenAI) {
-        const content = await callOpenAI([
-          { role: 'system', content: system },
-          { role: 'user', content: user }
-        ]);
-        parsed = JSON.parse(cleanClaudeText({ content: [{ text: content }] }));
-      } else {
-        throw new Error('All AI providers failed');
-      }
-    }
-
-    return {
-      source: useAnthropic ? 'anthropic' : 'openai',
-      title: parsed.title || `${topic} automation`,
-      caption: parsed.caption || '',
-      caption_uk: parsed.caption_uk || '',
-      viral_structure: parsed.viral_structure || {},
-      hooks_pool: parsed.hooks_pool || [],
-      hook_score: parsed.hook_score || 0,
-      full_voiceover: parsed.full_voiceover || (parsed.scenes || []).map(scene => scene.voiceover).join(' '),
-      scenes: Array.isArray(parsed.scenes) && parsed.scenes.length
-        ? parsed.scenes
-        : splitScenes(topic, scenesCount)
-    };
-  } catch (error) {
-    console.warn('Script generation fallback:', error.message);
-    return fallbackScriptPlan(input);
-  }
-}
-
-async function generateSignalBrief(input = {}) {
-  const useAnthropic = !!process.env.ANTHROPIC_API_KEY;
-  const useOpenAI = !!process.env.OPENAI_API_KEY;
-  const topic = input.topic || 'AI content system';
-  const product = input.product || 'affiliate product';
-  const market = input.market || 'Global';
-  const platforms = Array.isArray(input.platforms) ? input.platforms.join(', ') : (input.platform || 'TikTok');
-
-  if (!useAnthropic && !useOpenAI) {
-    return {
-      source: 'fallback',
-      topic,
-      angle: `${topic} with a direct product-led hook`,
-      audience: `buyers in ${market}`,
-      problem: `People in ${market} do not have a simple fast solution for ${topic}.`,
-      promise: `${product} helps reduce friction and speed up the outcome.`,
-      marketNote: `Prioritize short-form hooks for ${platforms}.`
-    };
-  }
-
-  const system = [
-    'You create compact market-ready signal briefs for an automated short-form content factory.',
-    'Return only valid JSON.',
-    'Keep the output concise, practical, and ready for script generation.'
-  ].join(' ');
-
-  let scrapedIntel = '';
-  try {
-    const q = encodeURIComponent(`${topic} ${market}`);
-    const res = await axios.get(`https://www.reddit.com/search.json?q=${q}&sort=relevance&t=year&limit=5`, {
-      headers: { 'User-Agent': 'CreatorOS/1.0' }
-    });
-    if (res.data?.data?.children) {
-      const posts = res.data.data.children.map((c, i) => `${i+1}. ${c.data.title} (Upvotes: ${c.data.score})`);
-      scrapedIntel = '\n\nREAL MARKET SIGNALS (Reddit top posts):\n' + posts.join('\n');
-    }
-  } catch (e) {
-    console.warn('Scraping skipped/failed:', e.message);
-  }
-
-  const user = [
-    `Topic: ${topic}`,
-    `Product: ${product}`,
-    `Market: ${market}`,
-    `Platforms: ${platforms}`,
-    scrapedIntel,
-    '\nSchema:',
-    '{"topic":"string","angle":"string","audience":"string","problem":"string","promise":"string","marketNote":"string"}'
-  ].filter(Boolean).join('\n');
-
-  try {
-    if (useAnthropic) {
-      const data = await callAnthropic(system, [{ role: 'user', content: user }], ANTHROPIC_MODEL, 600);
-      return JSON.parse(cleanClaudeText(data));
-    }
-
-    const content = await callOpenAI([
-      { role: 'system', content: system },
-      { role: 'user', content: user }
-    ]);
-    return JSON.parse(content);
-  } catch (error) {
-    console.warn('Signal generation fallback:', error.message);
-    return {
-      source: 'fallback',
-      topic,
-      angle: `${topic} with a direct product-led hook`,
-      audience: `buyers in ${market}`,
-      problem: `People in ${market} do not have a simple fast solution for ${topic}.`,
-      promise: `${product} helps reduce friction and speed up the outcome.`,
-      marketNote: `Prioritize short-form hooks for ${platforms}.`
-    };
-  }
-}
-
-async function saveBuffer(buffer, filePath) {
-  await fs.writeFile(filePath, buffer);
-  return filePath;
-}
-
-async function generateVoiceAsset({ jobId, text, voiceId = ELEVENLABS_VOICE_ID }) {
-  if (!text) {
-    return { status: 'skipped', reason: 'No voice text provided.' };
-  }
-
-  const fileName = `${jobId}.mp3`;
-  const filePath = path.join(AUDIO_DIR, fileName);
-  const openaiVoice = process.env.OPENAI_TTS_VOICE || 'onyx'; // affordable, confident, neutral
-
-  // PRIMARY: OpenAI TTS ($0.015 / 1k chars — 15x cheaper than ElevenLabs)
-  if (process.env.OPENAI_API_KEY) {
-    try {
-      console.log(`[Factory] 🎙️ OpenAI TTS (${openaiVoice}) → job ${jobId}`);
-      const response = await axios.post(
-        'https://api.openai.com/v1/audio/speech',
-        { model: 'tts-1', input: text, voice: openaiVoice },
-        {
-          headers: {
-            'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-            'Content-Type': 'application/json'
-          },
-          responseType: 'arraybuffer',
-          timeout: 60000
-        }
-      );
-      await saveBuffer(Buffer.from(response.data), filePath);
-      return {
-        status: 'completed',
-        provider: 'openai',
-        voice: openaiVoice,
-        filePath,
-        publicUrl: `/runtime/audio/${fileName}`
-      };
-    } catch (e) {
-      const errText = e.response?.data ? e.response.data.toString() : e.message;
-      console.error(`[OpenAI TTS Error]: ${errText.substring(0, 150)}`);
-    }
-  }
-
-  // FALLBACK: ElevenLabs (high quality, higher cost)
-  if (process.env.ELEVENLABS_API_KEY) {
-    try {
-      console.log(`[Factory] 🔄 ElevenLabs fallback → job ${jobId}`);
-      const response = await axios.post(
-        `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
-        { text, model_id: 'eleven_multilingual_v2' },
-        {
-          headers: {
-            'xi-api-key': process.env.ELEVENLABS_API_KEY,
-            Accept: 'audio/mpeg',
-            'Content-Type': 'application/json'
-          },
-          responseType: 'arraybuffer',
-          timeout: 120000
-        }
-      );
-      await saveBuffer(Buffer.from(response.data), filePath);
-      return {
-        status: 'completed',
-        provider: 'elevenlabs',
-        filePath,
-        publicUrl: `/runtime/audio/${fileName}`
-      };
-    } catch (error) {
-      const errText = error.response?.data ? error.response.data.toString() : error.message;
-      console.error(`[ElevenLabs API Error]: ${errText.substring(0, 150)}`);
-    }
-  }
-
-  return {
-    status: 'fallback_error',
-    provider: 'none',
-    error: 'All TTS providers failed or are missing API keys.',
-    filePath: null,
-    publicUrl: null
-  };
-}
-
-function pickPexelsFile(videoFiles = []) {
-  const portrait = videoFiles
-    .filter(file => file.height >= file.width)
-    .sort((a, b) => a.width - b.width);
-
-  if (portrait.length) return portrait[0];
-  return videoFiles[0] || null;
-}
-
-async function downloadBinary(url, filePath, headers = {}) {
-  const response = await axios.get(url, {
-    headers,
-    responseType: 'arraybuffer',
-    timeout: 120000
-  });
-
-  await saveBuffer(Buffer.from(response.data), filePath);
-  return filePath;
-}
-
-async function generateClipAssets({ jobId, scenes = [] }) {
-  if (!scenes.length) {
-    return { status: 'skipped', assets: [] };
-  }
-
-  if (!process.env.PEXELS_API_KEY) {
-    return {
-      status: 'not_configured',
-      provider: 'pexels',
-      assets: scenes.map(scene => ({
-        scene_id: scene.scene_id,
-        query: scene.search_query
-      }))
-    };
-  }
-
-  const assets = [];
-
-  for (const scene of scenes) {
-    const searchResponse = await axios.get('https://api.pexels.com/videos/search', {
-      headers: { Authorization: process.env.PEXELS_API_KEY },
-      params: {
-        query: scene.search_query,
-        per_page: 1,
-        orientation: 'portrait'
-      },
-      timeout: 60000
-    });
-
-    const video = searchResponse.data.videos?.[0];
-    const file = pickPexelsFile(video?.video_files || []);
-
-    if (!file?.link) {
-      assets.push({
-        scene_id: scene.scene_id,
-        status: 'missing',
-        query: scene.search_query
-      });
-      continue;
-    }
-
-    const fileName = `${jobId}_scene_${scene.scene_id}.mp4`;
-    const filePath = path.join(CLIP_DIR, fileName);
-    await downloadBinary(file.link, filePath);
-
-    assets.push({
-      scene_id: scene.scene_id,
-      status: 'completed',
-      query: scene.search_query,
-      filePath,
-      publicUrl: `/runtime/clips/${fileName}`,
-      duration_sec: scene.duration_sec
-    });
-  }
-
-  return {
-    status: assets.every(asset => asset.status === 'completed') ? 'completed' : 'partial',
-    provider: 'pexels',
-    assets
-  };
-}
-
-function shellQuote(value) {
-  return `"${String(value).replace(/"/g, '\\"')}"`;
-}
-
-// Escape text for FFmpeg drawtext filter
-function escapeDrawtext(text) {
-  return String(text || '')
-    .toUpperCase()
-    .replace(/\\/g, '\\\\')
-    .replace(/'/g, "\\\\'")  // escape single quotes
-    .replace(/:/g, '\\\\:')  // escape colons
-    .replace(/[\r\n]+/g, ' ')  // remove newlines
-    .trim()
-    .slice(0, 80);  // max 80 chars safety
-}
-
-function buildRenderArgs({ clipAssets, audioFilePath, outputFilePath, scenes }) {
-  const clipInputs = clipAssets.flatMap(asset => ['-i', asset.filePath]);
-  const hasAudio = Boolean(audioFilePath);
-  const audioInput = hasAudio ? ['-i', audioFilePath] : [];
-
-  const filters = clipAssets.map((asset, index) => {
-    const scene = scenes.find(item => item.scene_id === asset.scene_id) || {};
-    const duration = Number(scene.duration_sec || asset.duration_sec || 6);
-
-    // Base video processing
-    let f = `[${index}:v]trim=duration=${duration},setpts=PTS-STARTPTS,scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,format=yuv420p`;
-
-    // Add text overlay if on_screen_text exists
-    const rawText = scene.on_screen_text || '';
-    if (rawText) {
-      const safeText = escapeDrawtext(rawText);
-      // White bold uppercase text, centered in upper third, semi-transparent dark background box
-      f += `,drawtext=text='${safeText}'`
-        + `:fontsize=96`
-        + `:fontcolor=white`
-        + `:x=(w-text_w)/2`
-        + `:y=(h-text_h)/3`
-        + `:box=1`
-        + `:boxcolor=black@0.55`
-        + `:boxborderw=30`
-        + `:shadowcolor=black@0.8`
-        + `:shadowx=3`
-        + `:shadowy=3`;
-    }
-
-    f += `[v${index}]`;
-    return f;
-  });
-
-  const concatInputs = clipAssets.map((_, index) => `[v${index}]`).join('');
-  const filterComplex = `${filters.join(';')};${concatInputs}concat=n=${clipAssets.length}:v=1:a=0[v]`;
-
-  const args = [
-    ...clipInputs,
-    ...audioInput,
-    '-filter_complex', filterComplex,
-    '-map', '[v]',
-    '-c:v', 'libx264',
-    '-preset', 'ultrafast',
-    '-crf', '28',
-    '-threads', '1',
-    '-y'
-  ];
-
-  if (hasAudio) {
-    // map the audio file which is the last input (index = clipAssets.length)
-    args.push('-map', `${clipAssets.length}:a`, '-c:a', 'aac', '-shortest');
-  } else {
-    // explicitly say no audio
-    args.push('-an');
-  }
-
-  args.push(outputFilePath);
-  
-  return args;
-}
-
-// Mapping of products to Amazon ASINs for maximum conversion (Direct Product Links)
-const PRODUCT_ASIN_MAP = {
-  'ring video doorbell 4': 'B08N5WRWNW',
-  'ring doorbell': 'B08N5WRWNW',
-  'sunpower solar panel': 'B01N2WG4UE',
-  'solar panel': 'B01N2WG4UE',
-  'destructive chewer dog toy': 'B007R1BN56',
-  'dog toy': 'B007R1BN56',
-  'lawn fertilizer': 'B00X797T5W'
-};
-
-async function generateAffiliateLink(product) {
-  const normalized = (product || '').toLowerCase().trim();
-  const amazonTag = process.env.AMAZON_AFFILIATE_TAG || 'YOUR_TAG';
-  
-  let longUrl;
-  
-  // Try to find direct ASIN link (High Conversion)
-  const asin = PRODUCT_ASIN_MAP[normalized] || Object.keys(PRODUCT_ASIN_MAP).find(k => normalized.includes(k));
-  
-  if (asin) {
-    longUrl = `https://www.amazon.co.uk/dp/${PRODUCT_ASIN_MAP[asin] || asin}/?tag=${amazonTag}`;
-  } else {
-    // Fallback to search link (Medium Conversion)
-    const query = encodeURIComponent(product);
-    longUrl = `https://www.amazon.co.uk/s?k=${query}&tag=${amazonTag}&ref=nb_sb_noss`;
-  }
-
-  try {
-    const res = await axios.get(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(longUrl)}`, { timeout: 5000 });
-    return res.data;
-  } catch (err) {
-    console.warn('TinyURL failed, using long URL:', err.message);
-    return longUrl;
-  }
-}
-
-async function isFfmpegAvailable() {
-  try {
-    await execFileAsync(FFMPEG_PATH, ['-version']);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-async function renderVideoAsset({ jobId, clipAssets = [], audioFilePath, scenes = [], dryRun = false }) {
-  if (!clipAssets.length) {
-    return {
-      status: 'blocked',
-      reason: 'Missing local clips for rendering.'
-    };
-  }
-
-  const ffmpegAvailable = await isFfmpegAvailable();
-  const outputFileName = `${jobId}.mp4`;
-  const outputFilePath = path.join(RENDER_DIR, outputFileName);
-  const args = buildRenderArgs({ clipAssets, audioFilePath, outputFilePath, scenes });
-  const commandPreview = `${FFMPEG_PATH} ${args.map(shellQuote).join(' ')}`;
-
-  if (!ffmpegAvailable) {
-    return {
-      status: 'not_configured',
-      provider: 'ffmpeg',
-      commandPreview,
-      reason: 'FFmpeg is not available on the server.'
-    };
-  }
-
-  if (dryRun) {
-    return {
-      status: 'planned',
-      provider: 'ffmpeg',
-      commandPreview,
-      outputFilePath
-    };
-  }
-
-  await execFileAsync(FFMPEG_PATH, args, { maxBuffer: 1024 * 1024 * 20 });
-
-  return {
-    status: 'completed',
-    provider: 'ffmpeg',
-    commandPreview,
-    filePath: outputFilePath,
-    publicUrl: `/runtime/renders/${outputFileName}`
-  };
-}
 
 function buildPublishPlan({ jobId, platform = 'TikTok', renderResult }) {
   const uploadTargets = Array.isArray(platform) ? platform : String(platform).split(',').map(item => item.trim()).filter(Boolean);
@@ -781,146 +191,8 @@ const FACTORY_STEP_STATE_META = {
   needs_review: { label: 'потрібен review', tone: 'blue' }
 };
 
-let supabaseServerClient = null;
-let supabaseServerInit = false;
+// Jobs store handled by services/jobs.store.js
 
-function getSupabaseServerClient() {
-  if (supabaseServerInit) return supabaseServerClient;
-  supabaseServerInit = true;
-
-  const url = process.env.SUPABASE_URL || process.env.SUPABASE_PROJECT_URL || '';
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
-
-  if (!url || !key) {
-    console.warn('[Supabase] Server sync disabled: missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');
-    supabaseServerClient = null;
-    return null;
-  }
-
-  supabaseServerClient = createClient(url, key, {
-    auth: { persistSession: false, autoRefreshToken: false }
-  });
-  return supabaseServerClient;
-}
-
-async function syncJobToSupabase(job) {
-  const sb = getSupabaseServerClient();
-  if (!sb) return { status: 'not_configured' };
-
-  try {
-    const payload = {
-      id: job.id,
-      topic: job.input?.topic || '',
-      market: job.input?.market || '',
-      status: job.status || 'queued',
-      progress: job.progress || 0,
-      video_url: job.resultPackage?.videoUrl || null,
-      error_message: job.error || null,
-      data: job, // full artifact
-      updated_at: job.updatedAt || new Date().toISOString()
-    };
-    
-    const { error } = await sb.from('factory_jobs').upsert(payload, { onConflict: 'id' });
-    if (error) throw error;
-    return { status: 'synced' };
-  } catch (error) {
-    console.warn('Supabase job sync skipped:', error.message);
-    return { status: 'error', error: error.message };
-  }
-}
-
-async function readJobFromSupabase(jobId) {
-  const sb = getSupabaseServerClient();
-  if (!sb) return null;
-
-  try {
-    const { data, error } = await sb
-      .from('factory_jobs')
-      .select('data')
-      .eq('id', jobId)
-      .maybeSingle();
-    if (error) throw error;
-    return data?.data || null;
-  } catch (error) {
-    console.warn('Supabase job read skipped:', error.message);
-    return null;
-  }
-}
-
-async function listJobsFromSupabase(limit = 20) {
-  const sb = getSupabaseServerClient();
-  if (!sb) return [];
-
-  try {
-    const { data, error } = await sb
-      .from('factory_jobs')
-      .select('data, updated_at')
-      .order('updated_at', { ascending: false })
-      .limit(limit);
-    if (error) throw error;
-    return (data || []).map(row => row.data).filter(Boolean);
-  } catch (error) {
-    console.warn('Supabase job list skipped:', error.message);
-    return [];
-  }
-}
-
-async function writeJob(job) {
-  const filePath = path.join(JOB_DIR, `${job.id}.json`);
-  const tempPath = `${filePath}.tmp`;
-  await fs.writeFile(tempPath, JSON.stringify(job, null, 2));
-  await fs.rename(tempPath, filePath);
-  await syncJobToSupabase(job);
-  return filePath;
-}
-
-async function readJob(jobId) {
-  const filePath = path.join(JOB_DIR, `${jobId}.json`);
-  try {
-    const content = await fs.readFile(filePath, 'utf8');
-    return JSON.parse(content);
-  } catch (error) {
-    if (error?.code !== 'ENOENT') throw error;
-    const remote = await readJobFromSupabase(jobId);
-    if (remote) return remote;
-    throw error;
-  }
-}
-
-async function listJobs(limit = 20) {
-  const localJobs = await (async () => {
-    try {
-      const files = await fs.readdir(JOB_DIR);
-      const jobFiles = files.filter(file => file.endsWith('.json'));
-      const jobs = await Promise.all(jobFiles.map(async file => {
-        try {
-          const content = await fs.readFile(path.join(JOB_DIR, file), 'utf8');
-          return JSON.parse(content);
-        } catch { return null; }
-      }));
-      return jobs
-        .filter(Boolean)
-        .sort((a, b) => new Date(b.updatedAt || b.createdAt || 0) - new Date(a.updatedAt || a.createdAt || 0))
-        .slice(0, limit);
-    } catch {
-      return [];
-    }
-  })();
-
-  const remoteJobs = await listJobsFromSupabase(limit);
-  const merged = new Map();
-  [...localJobs, ...remoteJobs].forEach(job => {
-    if (!job?.id) return;
-    const existing = merged.get(job.id);
-    if (!existing || new Date(job.updatedAt || job.createdAt || 0) > new Date(existing.updatedAt || existing.createdAt || 0)) {
-      merged.set(job.id, job);
-    }
-  });
-
-  return Array.from(merged.values())
-    .sort((a, b) => new Date(b.updatedAt || b.createdAt || 0) - new Date(a.updatedAt || a.createdAt || 0))
-    .slice(0, limit);
-}
 
 function validateFactoryInput(input = {}) {
   const errors = [];
@@ -1012,19 +284,9 @@ async function createFactoryJob(input = {}) {
   return job;
 }
 
+// updateFactoryJob wraps updateJob from jobs.store
 async function updateFactoryJob(jobId, patch = {}, logMessage = '') {
-  const current = await readJob(jobId);
-  const nextLog = logMessage
-    ? [...(current.log || []), { at: new Date().toISOString(), message: logMessage }]
-    : (current.log || []);
-  const next = {
-    ...current,
-    ...patch,
-    updatedAt: new Date().toISOString(),
-    log: nextLog
-  };
-  await writeJob(next);
-  return next;
+  return updateJob(jobId, patch, logMessage);
 }
 
 function isFactoryJobTerminal(job) {
@@ -1532,10 +794,23 @@ app.post('/api/automation/full-video', requireApiKey, async (req, res) => {
   }
 });
 
+/* ── Affiliate redirect + Click Tracking ── */
+app.get('/go/:linkId', affiliateRedirectHandler);
+
+app.get('/api/clicks', async (req, res) => {
+  try {
+    const stats = await getClickStats(req.query.jobId || null);
+    res.json(stats);
+  } catch (err) {
+    jsonError(res, 500, 'Failed to read click stats', err.message);
+  }
+});
+
 /* ── / route ── */
 app.get('/', (_req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index_factory.html'));
 });
+
 
 /* ── /legacy route ── */
 app.get('/legacy', (_req, res) => {
