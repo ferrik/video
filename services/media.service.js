@@ -91,21 +91,35 @@ async function generateClipAssets({ jobId, scenes = [] }) {
 
   const assets = [];
   for (const scene of scenes) {
-    const searchResponse = await axios.get('https://api.pexels.com/videos/search', {
-      headers: { Authorization: process.env.PEXELS_API_KEY },
-      params: { query: scene.search_query, per_page: 1, orientation: 'portrait' },
-      timeout: 60000
-    });
-    const video = searchResponse.data.videos?.[0];
-    const file = pickPexelsFile(video?.video_files || []);
-    if (!file?.link) {
-      assets.push({ scene_id: scene.scene_id, status: 'missing', query: scene.search_query });
-      continue;
+    try {
+      const searchResponse = await axios.get('https://api.pexels.com/videos/search', {
+        headers: { Authorization: process.env.PEXELS_API_KEY },
+        params: { query: scene.search_query, per_page: 3, orientation: 'portrait' },
+        timeout: 30000
+      });
+      const video = searchResponse.data.videos?.[0];
+      const file = pickPexelsFile(video?.video_files || []);
+      if (!file?.link) {
+        console.warn(`[media] No Pexels result for: "${scene.search_query}"`);
+        assets.push({ scene_id: scene.scene_id, status: 'missing', query: scene.search_query });
+        continue;
+      }
+      const fileName = `${jobId}_scene_${scene.scene_id}.mp4`;
+      const filePath = path.join(CLIP_DIR, fileName);
+      await fs.mkdir(CLIP_DIR, { recursive: true });
+      await downloadBinary(file.link, filePath);
+      assets.push({
+        scene_id: scene.scene_id,
+        status: 'completed',
+        query: scene.search_query,
+        filePath,
+        publicUrl: `/runtime/clips/${fileName}`,
+        duration_sec: scene.duration_sec
+      });
+    } catch (err) {
+      console.error(`[media] Clip fetch failed for scene ${scene.scene_id} ("${scene.search_query}"):`, err.message);
+      assets.push({ scene_id: scene.scene_id, status: 'missing', query: scene.search_query, error: err.message });
     }
-    const fileName = `${jobId}_scene_${scene.scene_id}.mp4`;
-    const filePath = path.join(CLIP_DIR, fileName);
-    await downloadBinary(file.link, filePath);
-    assets.push({ scene_id: scene.scene_id, status: 'completed', query: scene.search_query, filePath, publicUrl: `/runtime/clips/${fileName}`, duration_sec: scene.duration_sec });
   }
 
   return {

@@ -42,7 +42,11 @@ function buildRenderArgs({ clipAssets, audioFilePath, outputFilePath, scenes }) 
   const filters = clipAssets.map((asset, index) => {
     const scene = scenes.find(item => item.scene_id === asset.scene_id) || {};
     const duration = Number(scene.duration_sec || asset.duration_sec || 6);
-    let f = `[${index}:v]trim=duration=${duration},setpts=PTS-STARTPTS,scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,format=yuv420p`;
+    // fps=30 ensures consistent framerate for concat
+    // setsar=1 fixes pixel aspect ratio from Pexels
+    // format=yuv420p ensures H.264 compatibility
+    let f = `[${index}:v]fps=fps=30,scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,setsar=1,format=yuv420p`;
+
     const rawText = scene.on_screen_text || '';
     if (rawText) {
       const safeText = escapeDrawtext(rawText);
@@ -63,13 +67,17 @@ function buildRenderArgs({ clipAssets, audioFilePath, outputFilePath, scenes }) 
   });
 
   const concatInputs = clipAssets.map((_, i) => `[v${i}]`).join('');
-  const filterComplex = `${filters.join(';')};${concatInputs}concat=n=${clipAssets.length}:v=1:a=0[v]`;
+  const filterComplex = `${filters.join(';')};${concatInputs}concat=n=${clipAssets.length}:v=1:a=0[vout]`;
 
   const args = [
     ...clipInputs, ...audioInput,
     '-filter_complex', filterComplex,
-    '-map', '[v]',
-    '-c:v', 'libx264', '-preset', 'ultrafast', '-crf', '28', '-threads', '1', '-y'
+    '-map', '[vout]',
+    '-c:v', 'libx264', '-preset', 'ultrafast', '-crf', '28',
+    '-r', '30',
+    '-threads', '1',
+    '-movflags', '+faststart',
+    '-y'
   ];
 
   if (hasAudio) {
