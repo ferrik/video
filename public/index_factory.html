@@ -504,7 +504,7 @@
     async function runFactory() {
       const topic = el('f-topic').value.trim();
       const product = el('f-product').value.trim();
-      if(!topic || !product) return alert('Будь ласка, вкажи Тему та Продукт');
+      if (!topic) return alert('Будь ласка, вкажи Тему відео');
 
       el('btn-run').disabled = true;
       el('btn-run').innerHTML = '<span class="spin">↻</span> Створення відео...';
