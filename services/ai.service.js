@@ -5,6 +5,151 @@ const axios = require('axios');
 const ANTHROPIC_MODEL = process.env.ANTHROPIC_MODEL || 'claude-3-5-sonnet-20240620';
 const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
 
+// ── Hook Database ─────────────────────────────────────────────────────────────
+// Curated, field-tested hooks per market & niche.
+// Usage: getHooks(market, niche) → shuffled top-3
+
+const HOOK_DB = {
+  UK: {
+    'home security': [
+      'UK homes are getting targeted right now',
+      'This is why UK houses get broken into',
+      'Most UK homes are NOT protected like this',
+      'Your front door isn\'t as safe as you think',
+      'This one mistake makes your home easy to target'
+    ],
+    'lawn': [
+      'Your lawn is dying and you don\'t see it',
+      'UK weather is killing your grass right now',
+      'Most UK lawns fail for this reason',
+      'Stop ruining your grass like this',
+      'This fixes your lawn in days'
+    ],
+    'solar': [
+      'UK energy bills are getting insane',
+      'This could cut your electricity costs fast',
+      'Most UK homes are wasting power daily',
+      'You don\'t need the grid for this',
+      'This setup pays for itself quickly'
+    ]
+  },
+  US: {
+    'dog toys': [
+      'Most dog toys last 5 minutes',
+      'Your dog will destroy this instantly',
+      'We tested the strongest dog toy',
+      'This is what aggressive chewers need',
+      'This toy actually survives'
+    ],
+    'home security': [
+      'This is why break-ins happen',
+      'Most homes are easy targets',
+      'You\'re not as safe as you think',
+      'This changes everything about home security',
+      'Don\'t wait until it\'s too late'
+    ],
+    'solar': [
+      'Power outage? You\'re not ready',
+      'This keeps your home running off-grid',
+      'Most people fail in blackouts',
+      'This setup saves you in emergencies',
+      'You need this before it\'s too late'
+    ]
+  },
+  CA: {
+    'winter': [
+      'Canada winter will break your home',
+      'You\'re not ready for this cold',
+      'Most homes fail during winter',
+      'This saves you during power outages',
+      'Don\'t get caught unprepared'
+    ],
+    'tools': [
+      'This tool saves hours of work',
+      'Most people do this the hard way',
+      'This makes the job 10x easier',
+      'You don\'t need expensive tools',
+      'This fixes it in seconds'
+    ]
+  },
+  UNIVERSAL: [
+    'Nobody talks about this',
+    'This changes everything',
+    'Most people don\'t know this',
+    'This is why it\'s failing',
+    'Stop doing this wrong',
+    'This works instantly',
+    'This saves you money fast',
+    'This is the easiest fix',
+    'You need this right now',
+    'This actually works'
+  ]
+};
+
+// Hook scoring: fear +30, emotion +30, specificity +20, brevity +20
+const HOOK_SCORE_WEIGHTS = {
+  fear:        { patterns: [/you.re|your|lose|break|fail|miss|danger|targ|wrong|ruin|kill|die|late|risk/i], score: 30 },
+  emotion:     { patterns: [/insane|crazy|finally|nobody|secret|truth|stop|don.t|never|always|hate|love|need/i], score: 30 },
+  specificity: { patterns: [/\d+|saves|costs|hours|days|minutes|seconds|actually|instantly|exactly/i], score: 20 },
+  brevity:     { patterns: [/^.{0,45}$/], score: 20 }
+};
+
+/**
+ * Score a single hook text (0-100)
+ */
+function scoreHook(text) {
+  let total = 0;
+  for (const { patterns, score } of Object.values(HOOK_SCORE_WEIGHTS)) {
+    if (patterns.some(p => p.test(text))) total += score;
+  }
+  return Math.min(total, 100);
+}
+
+/**
+ * Shuffle array in-place (Fisher-Yates)
+ */
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+/**
+ * Get top DB hooks for a market + niche.
+ * Falls back: niche match → universal → all market hooks
+ * Returns array of { text, score, source }
+ */
+function getHooks(market = 'US', niche = '', count = 5) {
+  const marketKey = (market || 'US').toUpperCase();
+  const nicheKey  = (niche || '').toLowerCase();
+
+  const marketData = HOOK_DB[marketKey] || HOOK_DB['US'];
+  let pool = [];
+
+  // 1. Exact niche match
+  if (marketData && typeof marketData === 'object' && !Array.isArray(marketData)) {
+    for (const [key, hooks] of Object.entries(marketData)) {
+      if (nicheKey.includes(key) || key.split(' ').some(w => nicheKey.includes(w))) {
+        pool.push(...hooks);
+      }
+    }
+    // 2. All market hooks as fallback
+    if (!pool.length) pool = Object.values(marketData).flat();
+  }
+
+  // 3. Always add universal hooks
+  pool.push(...HOOK_DB.UNIVERSAL);
+
+  // Deduplicate, score, sort, return top N
+  const unique = [...new Set(pool)];
+  const scored = unique.map(text => ({ text, score: scoreHook(text), source: 'db' }));
+  scored.sort((a, b) => b.score - a.score);
+  return shuffle(scored.slice(0, Math.max(count * 2, 10))).slice(0, count);
+}
+
 // ── Low-level AI callers ──────────────────────────────────────────────────────
 
 async function callAnthropic(system, messages, model = ANTHROPIC_MODEL, maxTokens = 2500) {
@@ -68,20 +213,29 @@ function splitScenes(text, count = 4) {
 }
 
 function fallbackScriptPlan(input) {
-  const topic = input.topic || 'AI content system';
+  const topic   = input.topic   || 'AI content system';
   const product = input.product || 'affiliate product';
+  const market  = input.market  || 'US';
+
+  // Pull real DB hooks instead of placeholder strings
+  const dbHooks   = getHooks(market, topic, 5);
+  const topHook   = dbHooks[0]?.text || `Stop scrolling. Here is the fastest way to fix ${topic}.`;
+  const hookScore = dbHooks[0]?.score || 80;
+
   const scenes = [
-    { scene_id: 1, voiceover: `Stop scrolling. Here is the fastest way to fix ${topic}.`, on_screen_text: `The ${topic} mistake`, search_query: `${topic} problem close up`, duration_sec: 4 },
-    { scene_id: 2, voiceover: `Most people keep doing the obvious thing, but the real fix starts with one hidden detail.`, on_screen_text: 'What everyone misses', search_query: `${topic} hidden issue`, duration_sec: 4 },
-    { scene_id: 3, voiceover: `This is where ${product} comes in. It removes the friction completely.`, on_screen_text: `${product} solution`, search_query: `${product} product demo`, duration_sec: 4 },
-    { scene_id: 4, voiceover: `It takes literally seconds to apply and you see the difference instantly.`, on_screen_text: 'Works in seconds', search_query: `smiling person using ${product}`, duration_sec: 5 },
-    { scene_id: 5, voiceover: `If you want the exact setup, check the link right now.`, on_screen_text: 'Link in bio', search_query: 'smartphone interacting', duration_sec: 4 }
+    { scene_id: 1, voiceover: topHook,                                                                    on_screen_text: topHook.slice(0, 40).toUpperCase(), search_query: `${topic} problem close up`,        duration_sec: 4 },
+    { scene_id: 2, voiceover: `Most people keep doing the obvious thing, but the real fix starts with one hidden detail.`, on_screen_text: 'WHAT EVERYONE MISSES',  search_query: `${topic} hidden issue`,              duration_sec: 4 },
+    { scene_id: 3, voiceover: `This is where ${product} comes in. It removes the friction completely.`,    on_screen_text: 'THE SOLUTION',             search_query: `${product} product demo`,            duration_sec: 4 },
+    { scene_id: 4, voiceover: `It takes literally seconds to apply and you see the difference instantly.`,  on_screen_text: 'WORKS IN SECONDS',          search_query: `smiling person using ${product}`,   duration_sec: 5 },
+    { scene_id: 5, voiceover: `If you want the exact setup, check the link right now.`,                    on_screen_text: 'LINK IN BIO',               search_query: 'smartphone interacting',            duration_sec: 4 }
   ];
+
   return {
     source: 'fallback',
     viral_structure: { hook: scenes[0].voiceover, problem: scenes[1].voiceover, solution: scenes[2].voiceover, proof: scenes[3].voiceover, cta: scenes[4].voiceover },
-    hooks_pool: [scenes[0].voiceover, 'Alternative Hook A', 'Alternative Hook B'],
-    hook_score: 85,
+    hooks_pool: dbHooks.slice(0, 3).map(h => h.text),
+    hooks_scored: dbHooks,
+    hook_score: hookScore,
     full_voiceover: scenes.map(s => s.voiceover).join(' '),
     scenes
   };
@@ -118,14 +272,19 @@ async function generateScriptPlan(input) {
     'Return ONLY valid JSON including a pool of 3 candidate hooks and a calculated hook_score (0-100).'
   ].join('\n');
 
+  // Seed AI with top DB hooks so it can compete / improve upon them
+  const dbHookCandidates = getHooks(market, topic, 5);
+  const dbHookLines = dbHookCandidates.map((h, i) => `  ${i + 1}. [score:${h.score}] "${h.text}"`).join('\n');
+
   const user = [
     `Topic: ${topic}`,
     `Product: ${product}`,
     `Platform: ${platform}`,
     `Target Market: ${market}`,
     `Total duration: ${durationSec} seconds`,
-    'Task: Generate 3 different hooks internally, pick the absolute best one (highest tension/fear), and use it for scene 1. Also include all 3 in "hooks_pool".',
-    'Generate exactly 5 scenes corresponding to the 5 structure steps.',
+    `\nPRE-SCORED DB HOOKS (use, improve, or beat these):\n${dbHookLines}`,
+    '\nTask: Generate 3 hooks. Prefer hooks that score highest on: fear/risk (+30), emotion (+30), specificity/numbers (+20), brevity <45 chars (+20). Use the best as scene 1. Include all 3 in "hooks_pool" with their calculated hook_score.',
+    'Generate exactly 5 scenes corresponding to: HOOK → PROBLEM → SOLUTION → PROOF → CTA.',
     'Schema:',
     '{"title":"string (aggressive hook)","caption":"string","hooks_pool":["string","string","string"],"hook_score":95,"viral_structure":{"hook":"string","problem":"string","solution":"string","proof":"string","cta":"string"},"scenes":[{"scene_id":1,"voiceover":"string","on_screen_text":"string","search_query":"string","duration_sec":4}]}'
   ].join('\n');
@@ -148,13 +307,25 @@ async function generateScriptPlan(input) {
         throw new Error('All AI providers failed');
       }
     }
+    // Attach DB hooks alongside AI hooks for hybrid output
+    const dbHooks = getHooks(market, topic, 5);
+    const aiHooksPool = parsed.hooks_pool || [];
+    // Merge: AI first, then unique DB hooks not already present
+    const mergedPool = [...aiHooksPool];
+    for (const h of dbHooks) {
+      if (!mergedPool.some(x => x.toLowerCase() === h.text.toLowerCase())) {
+        mergedPool.push(h.text);
+      }
+    }
+
     return {
       source: useAnthropic ? 'anthropic' : 'openai',
       title: parsed.title || `${topic} automation`,
       caption: parsed.caption || '',
       caption_uk: parsed.caption_uk || '',
       viral_structure: parsed.viral_structure || {},
-      hooks_pool: parsed.hooks_pool || [],
+      hooks_pool: mergedPool.slice(0, 6),
+      hooks_scored: mergedPool.slice(0, 6).map(text => ({ text, score: scoreHook(text), source: aiHooksPool.includes(text) ? 'ai' : 'db' })),
       hook_score: parsed.hook_score || 0,
       full_voiceover: parsed.full_voiceover || (parsed.scenes || []).map(s => s.voiceover).join(' '),
       scenes: Array.isArray(parsed.scenes) && parsed.scenes.length ? parsed.scenes : splitScenes(topic, scenesCount)
@@ -219,4 +390,4 @@ async function generateSignalBrief(input = {}) {
   }
 }
 
-module.exports = { callAnthropic, callOpenAI, cleanClaudeText, generateScriptPlan, generateSignalBrief };
+module.exports = { callAnthropic, callOpenAI, cleanClaudeText, generateScriptPlan, generateSignalBrief, getHooks, scoreHook, HOOK_DB };

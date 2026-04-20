@@ -103,6 +103,24 @@
     .rank-info { flex:1; min-width:0; }
     .rank-title { font-size:14px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .rank-scores { font-family:var(--m); font-size:11px; color:var(--t3); margin-top:2px; }
+
+    /* Hook Lab */
+    #hooklab-view { display:none; }
+    .hooklab-filters { display:flex; gap:10px; margin-bottom:20px; background:var(--bg); padding:15px; border-radius:8px; align-items:flex-end; flex-wrap:wrap; }
+    .hook-card { background:var(--s1); border:1px solid var(--b1); border-radius:10px; padding:14px 16px; margin-bottom:10px; display:flex; align-items:center; gap:14px; transition:border-color 0.2s, transform 0.1s; }
+    .hook-card:hover { border-color:var(--t3); transform:translateY(-1px); }
+    .hook-score-badge { min-width:44px; height:44px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-family:var(--m); font-weight:800; font-size:15px; flex-shrink:0; }
+    .hook-score-badge.green { background:var(--green-bg); color:var(--green); border:1px solid var(--green-bd); }
+    .hook-score-badge.amber { background:var(--amber-bg); color:var(--amber); border:1px solid var(--amber-bd); }
+    .hook-score-badge.red   { background:var(--red-bg);   color:var(--red);   border:1px solid var(--red-bd); }
+    .hook-text { flex:1; font-size:14px; font-weight:600; line-height:1.4; }
+    .hook-use-btn { background:var(--green-bg); border:1px solid var(--green-bd); color:var(--green); padding:6px 14px; border-radius:7px; font-size:12px; font-weight:700; cursor:pointer; white-space:nowrap; transition:background 0.2s; }
+    .hook-use-btn:hover { background:rgba(16,185,129,0.2); }
+    .hook-source { font-family:var(--m); font-size:9px; text-transform:uppercase; padding:2px 6px; border-radius:4px; margin-left:6px; }
+    .hook-source.db { background:var(--b1); color:var(--t3); }
+    .hook-source.ai { background:var(--amber-bg); color:var(--amber); border:1px solid var(--amber-bd); }
+    .score-bars { display:flex; gap:6px; font-size:10px; color:var(--t3); font-family:var(--m); margin-top:4px; }
+    .score-pill { padding:1px 6px; border-radius:4px; background:var(--s2); }
   </style>
 </head>
 <body>
@@ -112,6 +130,7 @@
     <button class="hamburger" onclick="toggleMobileNav()">☰</button>
     <div class="nav-btns" id="nav-btns">
       <button class="btn" onclick="toggleQueue()">📋 Сценарії (Черга)</button>
+      <button class="btn" id="nav-hooklab" onclick="toggleHookLab()" style="color:var(--t3)">🎣 Hook Lab</button>
       <button class="btn" id="nav-winners" onclick="toggleWinners()" style="color:var(--amber)">🏆 Winners</button>
       <a href="/legacy" class="btn">🔬 Старі Додатки</a>
     </div>
@@ -319,9 +338,48 @@
     </div>
   </main>
 
+  <!-- Hook Lab -->
+  <main id="hooklab-view">
+    <button class="btn" style="width:max-content; margin-bottom:15px; padding:6px 12px; font-size:12px;" onclick="showView('factory-view')">← Назад до Фабрики</button>
+
+    <div class="card">
+      <div class="card-title" style="color:var(--t3); border-color:var(--b1);">
+        <span>🎣 Hook Lab — Scored Hook Database</span>
+        <span style="font-size:10px; color:var(--t3); font-weight:400;">fear+30 · emotion+30 · specifics+20 · brevity+20</span>
+      </div>
+      <p style="font-size:12px; color:var(--t3); margin-bottom:15px;">Вибери ринок і нішу — система покаже всі хуки з оцінками. Натисни <b style="color:var(--green)">"Вставити"</b> щоб одразу підставити в Фабрику.</p>
+
+      <div class="hooklab-filters">
+        <div class="field" style="margin-bottom:0; flex:1; min-width:120px;">
+          <label>Ринок</label>
+          <select id="hl-market" onchange="loadHookLab()">
+            <option value="UK">UK (Британія)</option>
+            <option value="US" selected>US (США)</option>
+            <option value="CA">CA (Канада)</option>
+          </select>
+        </div>
+        <div class="field" style="margin-bottom:0; flex:2; min-width:150px;">
+          <label>Ніша (фільтр)</label>
+          <input type="text" id="hl-niche" placeholder="solar, dog toys, lawn..." oninput="loadHookLab()" />
+        </div>
+        <div class="field" style="margin-bottom:0; flex:1; min-width:80px;">
+          <label>Кількість</label>
+          <select id="hl-count" onchange="loadHookLab()">
+            <option value="5">5</option>
+            <option value="10" selected>10</option>
+            <option value="20">20</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="hl-meta" style="font-family:var(--m); font-size:10px; color:var(--t3); margin-bottom:12px;"></div>
+      <div id="hl-list">Обери ринок вище щоб завантажити хуки.</div>
+    </div>
+  </main>
+
   <script>
     // Navigation
-    const views = ['factory-view', 'queue-view', 'winners-view'];
+    const views = ['factory-view', 'queue-view', 'winners-view', 'hooklab-view'];
     function showView(id) { 
       views.forEach(v => document.getElementById(v).style.display = v === id ? 'block' : 'none'); 
       if(window.innerWidth < 768) {
@@ -334,7 +392,9 @@
     }
 
     function toggleQueue() { showView('queue-view'); loadQueue(); }
-    
+    function toggleHookLab() { showView('hooklab-view'); loadHookLab(); }
+    function toggleWinners() { showView('winners-view'); loadWinners(); }
+
     function toggleAcc() {
       const c = document.getElementById('f-adv');
       const i = document.getElementById('acc-icon');
@@ -552,12 +612,21 @@
         const scoreEl = el('v-score');
         if (scoreEl) scoreEl.textContent = `🔥 Score: ${res.hook_score || 0}/100`;
         
-        // Show Pool
-        const pool = res.hooks_pool || [];
+        // Show Pool (scored cards)
+        const pool = res.hooks_scored && res.hooks_scored.length ? res.hooks_scored : (res.hooks_pool || []).map(t => ({ text: t, score: 0, source: 'db' }));
         const poolEl = el('v-pool');
         if (poolEl) {
-          poolEl.innerHTML = pool.length > 0 
-            ? pool.map(h => `<div style="margin-bottom:4px; padding-left:10px; border-left:2px solid var(--bd)">${h}</div>`).join('')
+          poolEl.innerHTML = pool.length > 0
+            ? pool.map(h => {
+                const sc = h.score || 0;
+                const cls = sc >= 75 ? 'green' : sc >= 50 ? 'amber' : 'red';
+                const src = h.source === 'ai' ? '<span class="hook-source ai">AI</span>' : '<span class="hook-source db">DB</span>';
+                return `<div class="hook-card" style="margin-bottom:8px;">
+                  <div class="hook-score-badge ${cls}">${sc}</div>
+                  <div style="flex:1;"><div class="hook-text">${h.text}${src}</div></div>
+                  <button class="hook-use-btn" onclick="useHook(${JSON.stringify(h.text)})">⚡ Вставити</button>
+                </div>`;
+              }).join('')
             : 'Немає альтернатив';
         }
       } else {
@@ -593,8 +662,70 @@
       alert('Скопійовано до буфера обміну!');
     }
 
+    // ── Hook Lab ────────────────────────────────────────────────────────────────
+    let _hlDebounce = null;
+    async function loadHookLab() {
+      clearTimeout(_hlDebounce);
+      _hlDebounce = setTimeout(async () => {
+        const market = el('hl-market').value;
+        const niche  = (el('hl-niche').value || '').trim();
+        const count  = el('hl-count').value;
+        el('hl-list').innerHTML = '<div style="color:var(--t3);font-size:13px">⏳ Завантаження...</div>';
+        try {
+          const params = new URLSearchParams({ market, niche, count });
+          const data = await fetch('/api/hooks?' + params).then(r => r.json());
+          el('hl-meta').textContent = `Ринок: ${data.market} · Ніша: ${data.niche} · Знайдено: ${data.count} хуків · Ніші: ${(data.availableNiches||[]).join(', ') || '—'}`;
+          renderHookLabList(data.hooks || []);
+        } catch(e) {
+          el('hl-list').innerHTML = `<div style="color:var(--red);font-size:13px">Помилка: ${e.message}</div>`;
+        }
+      }, 350);
+    }
+
+    function renderHookLabList(hooks) {
+      if (!hooks.length) { el('hl-list').innerHTML = '<div style="color:var(--t3);padding:12px">Не знайдено. Спробуй інший ринок або нішу.</div>'; return; }
+      el('hl-list').innerHTML = hooks.map(h => {
+        const sc = h.score || 0;
+        const cls = sc >= 75 ? 'green' : sc >= 50 ? 'amber' : 'red';
+        const barW = Math.max(sc, 4);
+        return `<div class="hook-card">
+          <div class="hook-score-badge ${cls}">${sc}</div>
+          <div style="flex:1;">
+            <div class="hook-text">${h.text}</div>
+            <div class="score-bars">
+              <span class="score-pill">😱 fear</span>
+              <span class="score-pill">💥 emotion</span>
+              <span class="score-pill">🎯 specifics</span>
+              <span class="score-pill">✂️ brevity</span>
+              <div style="flex:1; background:var(--s2); border-radius:3px; height:4px; margin-top:2px; position:relative;">
+                <div style="position:absolute; left:0; top:0; height:4px; width:${barW}%; border-radius:3px; background:${cls==='green'?'var(--green)':cls==='amber'?'var(--amber)':'var(--red)'};transition:width 0.4s;"></div>
+              </div>
+            </div>
+          </div>
+          <button class="hook-use-btn" onclick="useHook(${JSON.stringify(h.text)})">⚡ Вставити</button>
+        </div>`;
+      }).join('');
+    }
+
+    function useHook(text) {
+      // Put hook text into topic field and switch to factory
+      if (el('f-topic').value.trim() === '') el('f-topic').value = text;
+      else {
+        // If topic already filled — we append as note with a separator so user sees it
+        const existing = el('f-topic').value;
+        if (!existing.includes(text)) el('f-topic').value = existing;
+      }
+      // Also pre-fill the hook visually in the result area title if user wants
+      showView('factory-view');
+      // Briefly highlight the topic field
+      const tf = el('f-topic');
+      tf.style.borderColor = 'var(--green)';
+      tf.style.boxShadow = '0 0 8px rgba(16,185,129,0.4)';
+      setTimeout(() => { tf.style.borderColor = ''; tf.style.boxShadow = ''; }, 1500);
+    }
+
+
     // ── Winners Dashboard ────────────────────────────────────────────────────
-    function toggleWinners() { showView('winners-view'); loadWinners(); }
 
     async function loadWinners() {
       el('winners-list').innerHTML = '<div style="color:var(--t3);font-size:13px">⏳ Завантаження...</div>';

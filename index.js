@@ -10,7 +10,7 @@ const packageJson = require('./package.json');
 dotenv.config();
 
 // ── Service modules ───────────────────────────────────────────────────────────
-const { generateScriptPlan, generateSignalBrief, callAnthropic, callOpenAI, cleanClaudeText } = require('./services/ai.service');
+const { generateScriptPlan, generateSignalBrief, callAnthropic, callOpenAI, cleanClaudeText, getHooks, scoreHook, HOOK_DB } = require('./services/ai.service');
 const { generateVoiceAsset, generateClipAssets } = require('./services/media.service');
 const { renderVideoAsset, buildRenderArgs } = require('./services/render.service');
 const { generateAffiliateLink, affiliateRedirectHandler, getClickStats } = require('./services/monetization');
@@ -472,6 +472,7 @@ async function executeFactoryJob(jobId, input = {}) {
       caption: scriptPlan.caption || '',
       caption_uk: scriptPlan.caption_uk || '',
       hooks_pool: scriptPlan.hooks_pool || [],
+      hooks_scored: scriptPlan.hooks_scored || [],
       hook_score: scriptPlan.hook_score || 0,
       hashtags,
       affiliateLink,
@@ -861,6 +862,34 @@ app.post('/api/winners/:jobId/clone', requireApiKey, async (req, res) => {
   }
 });
 
+
+/* ── Hook DB API ── */
+
+// GET /api/hooks?market=UK&niche=solar&count=5
+// Returns scored hook candidates from built-in DB
+app.get('/api/hooks', (req, res) => {
+  const market = String(req.query.market || 'US').toUpperCase();
+  const niche  = String(req.query.niche  || '');
+  const count  = Math.min(Number(req.query.count) || 10, 30);
+  const hooks  = getHooks(market, niche, count);
+  res.json({
+    market,
+    niche: niche || '(universal)',
+    count: hooks.length,
+    hooks,
+    scoringWeights: {
+      fear: 30,
+      emotion: 30,
+      specificity: 20,
+      brevity: 20
+    },
+    availableMarkets: Object.keys(HOOK_DB).filter(k => k !== 'UNIVERSAL'),
+    availableNiches: (() => {
+      const mData = HOOK_DB[market] || HOOK_DB['US'];
+      return (mData && !Array.isArray(mData)) ? Object.keys(mData) : [];
+    })()
+  });
+});
 
 /* ── / route ── */
 app.get('/', (_req, res) => {
