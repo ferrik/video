@@ -683,6 +683,37 @@
       UNIVERSAL: ['home security', 'solar', 'lawn', 'dog toys', 'winter', 'tools']
     };
 
+    // Suggested products per market + niche for auto-fill in Factory
+    const PRODUCT_HINTS = {
+      UK: {
+        'home security': 'Ring Video Doorbell 4 — £89.99',
+        'solar':         'EcoFlow RIVER 2 Pro — £299',
+        'lawn':          'Bosch Rotak 40 Electric Lawn Mower — £119'
+      },
+      US: {
+        'dog toys':      'KONG Classic Dog Toy (Large) — $14.99',
+        'home security': 'Ring Alarm 5-piece Security Kit — $199',
+        'solar':         'Jackery Explorer 300 Portable Power Station — $259'
+      },
+      CA: {
+        'winter':        'Mr. Heater Portable Buddy — CA$109',
+        'tools':         'DEWALT 20V MAX Cordless Drill — CA$149'
+      }
+    };
+
+    function getProductHint(market, niche) {
+      const m = (market || 'US').toUpperCase();
+      const n = (niche || '').toLowerCase();
+      const mHints = PRODUCT_HINTS[m] || PRODUCT_HINTS['US'];
+      // Exact key match first
+      if (mHints[n]) return mHints[n];
+      // Partial match
+      for (const [key, val] of Object.entries(mHints)) {
+        if (n.includes(key) || key.split(' ').some(w => n.includes(w))) return val;
+      }
+      return '';
+    }
+
     function updateNicheDatalist(niches) {
       const dl = document.getElementById('hl-niche-list');
       if (!dl) return;
@@ -706,23 +737,26 @@
             : (NICHE_HINTS[market] || NICHE_HINTS.UNIVERSAL);
           updateNicheDatalist(serverNiches);
           el('hl-meta').textContent = `Ринок: ${data.market} · Ніша: ${data.niche} · Знайдено: ${data.count} хуків · Доступні ніші: ${serverNiches.join(', ')}`;
-          renderHookLabList(data.hooks || []);
+          renderHookLabList(data.hooks || [], market, niche);
         } catch(e) {
           el('hl-list').innerHTML = `<div style="color:var(--red);font-size:13px">Помилка: ${e.message}</div>`;
         }
       }, 350);
     }
 
-    function renderHookLabList(hooks) {
+    function renderHookLabList(hooks, market, niche) {
       if (!hooks.length) { el('hl-list').innerHTML = '<div style="color:var(--t3);padding:12px">Не знайдено. Спробуй інший ринок або нішу.</div>'; return; }
+      const product = getProductHint(market, niche);
       el('hl-list').innerHTML = hooks.map(h => {
         const sc = h.score || 0;
         const cls = sc >= 75 ? 'green' : sc >= 50 ? 'amber' : 'red';
         const barW = Math.max(sc, 4);
+        const productHint = product ? `<div style="font-size:10px;color:var(--amber);margin-top:3px;font-family:var(--m);">🏷 ${product}</div>` : '';
         return `<div class="hook-card">
           <div class="hook-score-badge ${cls}">${sc}</div>
           <div style="flex:1;">
             <div class="hook-text">${h.text}</div>
+            ${productHint}
             <div class="score-bars">
               <span class="score-pill">😱 fear</span>
               <span class="score-pill">💥 emotion</span>
@@ -733,23 +767,42 @@
               </div>
             </div>
           </div>
-          <button class="hook-use-btn" onclick="useHook(${JSON.stringify(h.text)})">⚡ Вставити</button>
+          <button class="hook-use-btn" onclick="useHook(${JSON.stringify(h.text)}, ${JSON.stringify(market)}, ${JSON.stringify(niche)})">⚡ Вставити</button>
         </div>`;
       }).join('');
     }
 
-    function useHook(text) {
-      // Always overwrite topic field with the selected hook text
+    function useHook(text, market, niche) {
+      // 1. Fill topic with hook text
       el('f-topic').value = text;
+
+      // 2. Sync market
+      if (market) el('f-market').value = market;
+
+      // 3. Fill product with hint (only if field is empty)
+      const product = getProductHint(market || 'US', niche || '');
+      if (product && !el('f-product').value.trim()) {
+        el('f-product').value = product;
+      }
+
+      // 4. Switch to factory view
       showView('factory-view');
-      // Scroll to & highlight the topic field so user sees the change
+
+      // 5. Highlight both filled fields
+      function flashField(id) {
+        const f = el(id);
+        f.style.borderColor = 'var(--green)';
+        f.style.boxShadow = '0 0 0 3px rgba(16,185,129,0.3)';
+        setTimeout(() => { f.style.borderColor = ''; f.style.boxShadow = ''; }, 2000);
+      }
+      flashField('f-topic');
+      if (product) flashField('f-product');
+
+      // 6. Scroll topic into view & focus
       const tf = el('f-topic');
       tf.scrollIntoView({ behavior: 'smooth', block: 'center' });
       tf.focus();
       tf.select();
-      tf.style.borderColor = 'var(--green)';
-      tf.style.boxShadow = '0 0 0 3px rgba(16,185,129,0.35)';
-      setTimeout(() => { tf.style.borderColor = ''; tf.style.boxShadow = ''; }, 2000);
     }
 
 
