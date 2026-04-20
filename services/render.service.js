@@ -17,7 +17,7 @@ try {
   console.log('render.service: using system ffmpeg or FFMPEG_PATH env var.');
 }
 
-// ── FFmpeg helpers ────────────────────────────────────────────────────────────
+// ── FFmpeg helpers ─────────────────────────────────────────────────────────────
 
 function shellQuote(value) {
   return `"${String(value).replace(/"/g, '\\"')}"`;
@@ -46,7 +46,6 @@ function buildRenderArgs({ clipAssets, audioFilePath, outputFilePath, scenes }) 
     const rawText = scene.on_screen_text || '';
     if (rawText) {
       const safeText = escapeDrawtext(rawText);
-      // White bold uppercase text, centered in upper third
       f += `,drawtext=text='${safeText}'`
         + ':fontsize=96'
         + ':fontcolor=white'
@@ -90,18 +89,71 @@ async function isFfmpegAvailable() {
 }
 
 async function renderVideoAsset({ jobId, clipAssets = [], audioFilePath, scenes = [], dryRun = false }) {
-  if (!clipAssets.length) return { status: 'blocked', reason: 'Missing local clips for rendering.' };
-  const ffmpegAvailable = await isFfmpegAvailable();
   const outputFileName = `${jobId}.mp4`;
   const outputFilePath = path.join(RENDER_DIR, outputFileName);
-  const args = buildRenderArgs({ clipAssets, audioFilePath, outputFilePath, scenes });
+
+  // 1. Check FFmpeg availability
+  const ffmpegAvailable = await isFfmpegAvailable();
+  if (!ffmpegAvailable) {
+    return { status: 'not_configured', provider: 'ffmpeg', reason: 'FFmpeg is not available on the server.' };
+  }
+
+  // 2. Filter clips to only files that physically exist on disk
+  const validClips = [];
+  for (const asset of clipAssets) {
+    if (!asset.filePath) continue;
+    try { await fs.access(asset.filePath); validClips.push(asset); }
+    catch { console.warn(`[render] Clip missing, skipping: ${asset.filePath}`); }
+  }
+  if (!validClips.length) {
+    return { status: 'blocked', reason: 'No valid local clips found. Check Pexels API key and clip download.' };
+  }
+
+  // 3. Validate audio file exists (skip silently if missing — render mute)
+  let resolvedAudioPath = null;
+  if (audioFilePath) {
+    try { await fs.access(audioFilePath); resolvedAudioPath = audioFilePath; }
+    catch { console.warn(`[render] Audio file missing, rendering without audio: ${audioFilePath}`); }
+  }
+
+  // 4. Build FFmpeg args with validated assets
+  const args = buildRenderArgs({
+    clipAssets: validClips,
+    audioFilePath: resolvedAudioPath,
+    outputFilePath,
+    scenes
+  });
   const commandPreview = `${FFMPEG_PATH} ${args.map(shellQuote).join(' ')}`;
 
-  if (!ffmpegAvailable) return { status: 'not_configured', provider: 'ffmpeg', commandPreview, reason: 'FFmpeg is not available on the server.' };
   if (dryRun) return { status: 'planned', provider: 'ffmpeg', commandPreview, outputFilePath };
 
-  await execFileAsync(FFMPEG_PATH, args, { maxBuffer: 1024 * 1024 * 20 });
-  return { status: 'completed', provider: 'ffmpeg', commandPreview, filePath: outputFilePath, publicUrl: `/runtime/renders/${outputFileName}` };
+  // 5. Run FFmpeg — degrade gracefully on failure instead of crashing the job
+  try {
+    await fs.mkdir(RENDER_DIR, { recursive: true });
+    await execFileAsync(FFMPEG_PATH, args, {
+      maxBuffer: 1024 * 1024 * 50,  // 50 MB
+      timeout: 120000               // 2 min hard limit
+    });
+    return {
+      status: 'completed',
+      provider: 'ffmpeg',
+      commandPreview,
+      filePath: outputFilePath,
+      publicUrl: `/runtime/renders/${outputFileName}`,
+      clipsUsed: validClips.length,
+      hasAudio: Boolean(resolvedAudioPath)
+    };
+  } catch (err) {
+    const detail = (err.stderr || err.stdout || err.message || '').slice(0, 400);
+    console.error(`[render] FFmpeg failed [${jobId}]:`, detail);
+    return {
+      status: 'requires_follow_up',
+      provider: 'ffmpeg',
+      commandPreview,
+      reason: 'FFmpeg render failed — likely invalid clip format or codec issue.',
+      ffmpegError: detail
+    };
+  }
 }
 
-module.exports = { renderVideoAsset, buildRenderArgs, escapeDrawtext };
+module.exports = { renderVideoAsset, buildRenderArgs, escapeDrawtext, isFfmpegAvailable };
