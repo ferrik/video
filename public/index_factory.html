@@ -352,7 +352,7 @@
       <div class="hooklab-filters">
         <div class="field" style="margin-bottom:0; flex:1; min-width:120px;">
           <label>Ринок</label>
-          <select id="hl-market" onchange="loadHookLab()">
+          <select id="hl-market" onchange="el('hl-niche').value=''; updateNicheDatalist(NICHE_HINTS[this.value]||NICHE_HINTS.UNIVERSAL); loadHookLab()">
             <option value="UK">UK (Британія)</option>
             <option value="US" selected>US (США)</option>
             <option value="CA">CA (Канада)</option>
@@ -360,7 +360,18 @@
         </div>
         <div class="field" style="margin-bottom:0; flex:2; min-width:150px;">
           <label>Ніша (фільтр)</label>
-          <input type="text" id="hl-niche" placeholder="solar, dog toys, lawn..." oninput="loadHookLab()" />
+          <input type="text" id="hl-niche" list="hl-niche-list"
+            placeholder="Обери або впиши нішу..."
+            oninput="loadHookLab()" autocomplete="off" />
+          <datalist id="hl-niche-list">
+            <!-- populated dynamically by updateNicheDatalist() -->
+            <option value="home security">
+            <option value="solar">
+            <option value="lawn">
+            <option value="dog toys">
+            <option value="winter">
+            <option value="tools">
+          </datalist>
         </div>
         <div class="field" style="margin-bottom:0; flex:1; min-width:80px;">
           <label>Кількість</label>
@@ -663,6 +674,21 @@
     }
 
     // ── Hook Lab ────────────────────────────────────────────────────────────────
+
+    // All known niches per market (mirrors HOOK_DB keys + universal)
+    const NICHE_HINTS = {
+      UK: ['home security', 'solar', 'lawn'],
+      US: ['dog toys', 'home security', 'solar'],
+      CA: ['winter', 'tools'],
+      UNIVERSAL: ['home security', 'solar', 'lawn', 'dog toys', 'winter', 'tools']
+    };
+
+    function updateNicheDatalist(niches) {
+      const dl = document.getElementById('hl-niche-list');
+      if (!dl) return;
+      dl.innerHTML = niches.map(n => `<option value="${n}">`).join('');
+    }
+
     let _hlDebounce = null;
     async function loadHookLab() {
       clearTimeout(_hlDebounce);
@@ -674,7 +700,12 @@
         try {
           const params = new URLSearchParams({ market, niche, count });
           const data = await fetch('/api/hooks?' + params).then(r => r.json());
-          el('hl-meta').textContent = `Ринок: ${data.market} · Ніша: ${data.niche} · Знайдено: ${data.count} хуків · Ніші: ${(data.availableNiches||[]).join(', ') || '—'}`;
+          // Update datalist with niches returned by server for this market
+          const serverNiches = data.availableNiches && data.availableNiches.length
+            ? data.availableNiches
+            : (NICHE_HINTS[market] || NICHE_HINTS.UNIVERSAL);
+          updateNicheDatalist(serverNiches);
+          el('hl-meta').textContent = `Ринок: ${data.market} · Ніша: ${data.niche} · Знайдено: ${data.count} хуків · Доступні ніші: ${serverNiches.join(', ')}`;
           renderHookLabList(data.hooks || []);
         } catch(e) {
           el('hl-list').innerHTML = `<div style="color:var(--red);font-size:13px">Помилка: ${e.message}</div>`;
