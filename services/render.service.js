@@ -51,6 +51,7 @@ function buildRenderArgs({ clipAssets, audioFilePath, outputFilePath, scenes }) 
     if (rawText) {
       const safeText = escapeDrawtext(rawText);
       f += `,drawtext=text='${safeText}'`
+        + ':font=Sans'
         + ':fontsize=52'
         + ':fontcolor=white'
         + ':x=(w-text_w)/2'
