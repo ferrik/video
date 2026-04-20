@@ -47,16 +47,16 @@ function buildRenderArgs({ clipAssets, audioFilePath, outputFilePath, scenes }) 
     if (rawText) {
       const safeText = escapeDrawtext(rawText);
       f += `,drawtext=text='${safeText}'`
-        + ':fontsize=96'
+        + ':fontsize=52'
         + ':fontcolor=white'
         + ':x=(w-text_w)/2'
-        + ':y=(h-text_h)/3'
+        + ':y=h/4-(text_h/2)'
         + ':box=1'
         + ':boxcolor=black@0.55'
-        + ':boxborderw=30'
+        + ':boxborderw=12'
         + ':shadowcolor=black@0.8'
-        + ':shadowx=3'
-        + ':shadowy=3';
+        + ':shadowx=2'
+        + ':shadowy=2';
     }
     f += `[v${index}]`;
     return f;
