@@ -635,7 +635,7 @@
                 return `<div class="hook-card" style="margin-bottom:8px;">
                   <div class="hook-score-badge ${cls}">${sc}</div>
                   <div style="flex:1;"><div class="hook-text">${h.text}${src}</div></div>
-                  <button class="hook-use-btn" onclick="useHook(${JSON.stringify(h.text)})">⚡ Вставити</button>
+                  <button class="hook-use-btn" onclick='useHook(${JSON.stringify(h.text)})'>⚡ Вставити</button>
                 </div>`;
               }).join('')
             : 'Немає альтернатив';
@@ -767,7 +767,7 @@
               </div>
             </div>
           </div>
-          <button class="hook-use-btn" onclick="useHook(${JSON.stringify(h.text)}, ${JSON.stringify(market)}, ${JSON.stringify(niche)})">⚡ Вставити</button>
+          <button class="hook-use-btn" onclick='useHook(${JSON.stringify(h.text)}, ${JSON.stringify(market)}, ${JSON.stringify(niche)})'>⚡ Вставити</button>
         </div>`;
       }).join('');
     }
