@@ -635,7 +635,7 @@
                 return `<div class="hook-card" style="margin-bottom:8px;">
                   <div class="hook-score-badge ${cls}">${sc}</div>
                   <div style="flex:1;"><div class="hook-text">${h.text}${src}</div></div>
-                  <button class="hook-use-btn" onclick='useHook(${JSON.stringify(h.text)})'>⚡ Вставити</button>
+                  <button class="hook-use-btn" data-hook="${h.text.replace(/"/g,'&quot;')}">⚡ Вставити</button>
                 </div>`;
               }).join('')
             : 'Немає альтернатив';
@@ -767,7 +767,10 @@
               </div>
             </div>
           </div>
-          <button class="hook-use-btn" onclick='useHook(${JSON.stringify(h.text)}, ${JSON.stringify(market)}, ${JSON.stringify(niche)})'>⚡ Вставити</button>
+          <button class="hook-use-btn"
+            data-hook="${h.text.replace(/"/g,'&quot;')}"
+            data-market="${(market||'').replace(/"/g,'&quot;')}"
+            data-niche="${(niche||'').replace(/"/g,'&quot;')}">⚡ Вставити</button>
         </div>`;
       }).join('');
     }
@@ -779,7 +782,7 @@
       // 2. Sync market
       if (market) el('f-market').value = market;
 
-      // 3. Fill product with hint (only if field is empty)
+      // 3. Fill product hint if field is empty
       const product = getProductHint(market || 'US', niche || '');
       if (product && !el('f-product').value.trim()) {
         el('f-product').value = product;
@@ -788,9 +791,10 @@
       // 4. Switch to factory view
       showView('factory-view');
 
-      // 5. Highlight both filled fields
+      // 5. Flash highlight filled fields
       function flashField(id) {
         const f = el(id);
+        if (!f) return;
         f.style.borderColor = 'var(--green)';
         f.style.boxShadow = '0 0 0 3px rgba(16,185,129,0.3)';
         setTimeout(() => { f.style.borderColor = ''; f.style.boxShadow = ''; }, 2000);
@@ -798,12 +802,22 @@
       flashField('f-topic');
       if (product) flashField('f-product');
 
-      // 6. Scroll topic into view & focus
+      // 6. Scroll & focus topic
       const tf = el('f-topic');
       tf.scrollIntoView({ behavior: 'smooth', block: 'center' });
       tf.focus();
       tf.select();
     }
+
+    // Delegated click handler for all .hook-use-btn buttons (avoids quote escaping in onclick)
+    document.addEventListener('click', function(e) {
+      const btn = e.target.closest('.hook-use-btn');
+      if (!btn) return;
+      const text   = btn.dataset.hook    || '';
+      const market = btn.dataset.market  || '';
+      const niche  = btn.dataset.niche   || '';
+      if (text) useHook(text, market, niche);
+    });
 
 
     // ── Winners Dashboard ────────────────────────────────────────────────────
