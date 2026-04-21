@@ -16,9 +16,94 @@
 const axios = require('axios');
 const fs = require('fs/promises');
 const path = require('path');
+const { getSupabaseClient } = require('./supabase.client');
 
 const RUNTIME_DIR = path.join(__dirname, '..', 'runtime');
 const CLICKS_FILE = path.join(RUNTIME_DIR, 'clicks.json');
+
+async function insertClickToSupabase(entry) {
+  const sb = getSupabaseClient();
+  if (!sb) return false;
+  try {
+    const payload = {
+      link_id: entry.linkId,
+      job_id: entry.jobId,
+      product: entry.product,
+      market: entry.market,
+      url: entry.url,
+      clicked_at: entry.clickedAt || new Date().toISOString()
+    };
+    const { error } = await sb.from('job_clicks').insert(payload);
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.warn('[Monetization] Supabase click insert skipped:', error.message);
+    return false;
+  }
+}
+
+async function readClicksFromSupabase(jobId = null) {
+  const sb = getSupabaseClient();
+  if (!sb) return null;
+  try {
+    let query = sb.from('job_clicks').select('link_id, job_id, product, market, url, clicked_at').order('clicked_at', { ascending: true });
+    if (jobId) query = query.eq('job_id', jobId);
+    const { data, error } = await query;
+    if (error) throw error;
+    return (data || []).map(row => ({
+      linkId: row.link_id,
+      jobId: row.job_id,
+      product: row.product,
+      market: row.market,
+      url: row.url,
+      clickedAt: row.clicked_at
+    }));
+  } catch (error) {
+    console.warn('[Monetization] Supabase click read skipped:', error.message);
+    return null;
+  }
+}
+
+async function persistAffiliateLinkSupabase(linkId, entry) {
+  const sb = getSupabaseClient();
+  if (!sb) return false;
+  try {
+    const payload = {
+      link_id: linkId,
+      job_id: entry.jobId,
+      product: entry.product,
+      market: entry.market,
+      url: entry.url,
+      created_at: entry.createdAt || new Date().toISOString()
+    };
+    const { error } = await sb.from('affiliate_links').upsert(payload, { onConflict: 'link_id' });
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.warn('[Monetization] Supabase affiliate link skipped:', error.message);
+    return false;
+  }
+}
+
+async function readAffiliateLinkFromSupabase(linkId) {
+  const sb = getSupabaseClient();
+  if (!sb) return null;
+  try {
+    const { data, error } = await sb.from('affiliate_links').select('link_id, job_id, product, market, url').eq('link_id', linkId).maybeSingle();
+    if (error) throw error;
+    if (!data) return null;
+    return {
+      linkId: data.link_id,
+      jobId: data.job_id,
+      product: data.product,
+      market: data.market,
+      url: data.url
+    };
+  } catch (error) {
+    console.warn('[Monetization] Supabase affiliate link read skipped:', error.message);
+    return null;
+  }
+}
 
 // ── Market → Amazon Storefront ─────────────────────────────────────────────────
 // Maps market codes to the correct Amazon domain + Associates tag env var.
@@ -104,8 +189,9 @@ async function readClicks() {
 }
 
 async function recordClick({ linkId, jobId, product, market, url }) {
-  const clicks = await readClicks();
   const entry = { linkId, jobId, product, market, url, clickedAt: new Date().toISOString() };
+  void insertClickToSupabase(entry).catch(() => null);
+  const clicks = await readClicks();
   clicks.push(entry);
   // Structured log — visible in Render dashboard in real-time
   console.log('[CLICK]', JSON.stringify({ linkId, jobId, product, market, ts: entry.clickedAt }));
@@ -115,7 +201,8 @@ async function recordClick({ linkId, jobId, product, market, url }) {
 }
 
 async function getClickStats(jobId = null) {
-  const clicks = await readClicks();
+  const supabaseClicks = await readClicksFromSupabase(jobId);
+  const clicks = supabaseClicks || await readClicks();
   const relevant = jobId ? clicks.filter(c => c.jobId === jobId) : clicks;
   return {
     total: relevant.length,
@@ -162,9 +249,11 @@ async function generateAffiliateLink(product, jobId = null, market = 'UK', baseU
   const linksFile = path.join(RUNTIME_DIR, 'links.json');
   let linksMap = {};
   try { linksMap = JSON.parse(await fs.readFile(linksFile, 'utf8')); } catch { /* first run */ }
-  linksMap[linkId] = { product, jobId, market, url: longUrl, createdAt: new Date().toISOString() };
+  const entry = { product, jobId, market, url: longUrl, createdAt: new Date().toISOString() };
+  linksMap[linkId] = entry;
   await fs.mkdir(RUNTIME_DIR, { recursive: true });
   await fs.writeFile(linksFile, JSON.stringify(linksMap, null, 2));
+  void persistAffiliateLinkSupabase(linkId, entry).catch(() => null);
 
   if (baseUrl) {
     // Preferred: tracked link via our server → records click + redirects
@@ -180,6 +269,21 @@ async function generateAffiliateLink(product, jobId = null, market = 'UK', baseU
 async function affiliateRedirectHandler(req, res) {
   const { linkId } = req.params;
   const linksFile = path.join(RUNTIME_DIR, 'links.json');
+  try {
+    const supabaseEntry = await readAffiliateLinkFromSupabase(linkId);
+    if (supabaseEntry) {
+      await recordClick({
+        linkId,
+        jobId: supabaseEntry.jobId,
+        product: supabaseEntry.product,
+        market: supabaseEntry.market,
+        url: supabaseEntry.url
+      });
+      return res.redirect(302, supabaseEntry.url);
+    }
+  } catch (error) {
+    console.warn('[affiliateRedirect] Supabase read skipped:', error.message);
+  }
   try {
     const linksMap = JSON.parse(await fs.readFile(linksFile, 'utf8'));
     const entry = linksMap[linkId];

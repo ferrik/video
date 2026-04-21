@@ -16,6 +16,7 @@ const { renderVideoAsset, buildRenderArgs } = require('./services/render.service
 const { generateAffiliateLink, affiliateRedirectHandler, getClickStats } = require('./services/monetization');
 const { writeJob, readJob, listJobs, updateJob } = require('./services/jobs.store');
 const { getWinners, cloneWinner, getRanking, DEFAULT_WINNER_THRESHOLD } = require('./services/winner.engine');
+const { runMaintenanceTasks } = require('./services/runtime.maintenance');
 
 function checkEnv() {
   const required = ['ANTHROPIC_API_KEY', 'ELEVENLABS_API_KEY', 'PEXELS_API_KEY'];
@@ -96,6 +97,49 @@ function requireApiKey(req, res, next) {
     return res.status(401).json({ error: 'Unauthorized. Missing or invalid X-Api-Key header.' });
   }
   next();
+}
+
+function isAdminRequest(req) {
+  const serverKey = process.env.ADMIN_API_KEY;
+  if (!serverKey) return true;
+  const clientKey = req.headers['x-api-key'];
+  return Boolean(clientKey && clientKey === serverKey);
+}
+
+function publicJobSummary(job) {
+  if (!job) return job;
+  const summary = {
+    id: job.id,
+    status: job.status,
+    step: job.step,
+    progress: job.progress,
+    stepIndex: job.stepIndex,
+    stepCount: job.stepCount,
+    createdAt: job.createdAt,
+    updatedAt: job.updatedAt,
+    input: job.input,
+    signalBrief: job.signalBrief ? {
+      angle: job.signalBrief.angle,
+      audience: job.signalBrief.audience,
+      problem: job.signalBrief.problem
+    } : undefined,
+    publishPlan: job.publishPlan ? {
+      status: job.publishPlan.status,
+      uploadTargets: job.publishPlan.uploadTargets
+    } : undefined,
+    analyticsPlan: job.analyticsPlan ? {
+      status: job.analyticsPlan.status,
+      targets: job.analyticsPlan.targets
+    } : undefined,
+    resultSummary: job.resultPackage ? {
+      title: job.resultPackage.title,
+      caption: job.resultPackage.caption,
+      videoUrl: job.resultPackage.videoUrl,
+      quality: job.resultPackage?.metadata?.quality,
+      scenesCount: job.resultPackage?.metadata?.scenesCount
+    } : undefined
+  };
+  return summary;
 }
 
 app.use(express.static('public', { index: false }));
@@ -639,7 +683,10 @@ app.get('/api/factory/jobs', async (req, res) => {
   try {
     const limit = Math.min(Number(req.query.limit) || 20, 50);
     const jobs = await listJobs(limit);
-    res.json({ jobs });
+    const admin = isAdminRequest(req);
+    res.json({
+      jobs: admin ? jobs : jobs.map(publicJobSummary)
+    });
   } catch (error) {
     jsonError(res, 500, 'Failed to list jobs', error.message);
   }
@@ -648,7 +695,8 @@ app.get('/api/factory/jobs', async (req, res) => {
 app.get('/api/factory/jobs/:jobId', async (req, res) => {
   try {
     const job = await readJob(req.params.jobId);
-    res.json(job);
+    const admin = isAdminRequest(req);
+    res.json(admin ? job : publicJobSummary(job));
   } catch (error) {
     jsonError(res, 404, 'Job not found', error.message);
   }
@@ -1018,8 +1066,20 @@ app.patch('/api/factory/queue/:scenarioId', async (req, res) => {
   }
 });
 
+let maintenanceTimer = null;
+
+async function scheduleMaintenance() {
+  if (maintenanceTimer) return;
+  const minutes = Math.max(1, Number(process.env.RUNTIME_MAINTENANCE_INTERVAL_MIN || 60));
+  maintenanceTimer = setInterval(() => {
+    runMaintenanceTasks().catch(error => console.warn('[RuntimeMaintenance] scheduled run failed:', error.message));
+  }, minutes * 60 * 1000);
+}
+
 async function startServer(port = PORT) {
   await ensureRuntimeDirs();
+  await runMaintenanceTasks().catch(error => console.warn('[RuntimeMaintenance] initial run failed:', error.message));
+  await scheduleMaintenance();
   return app.listen(port, () => console.log(`Server running on port ${port}`));
 }
 

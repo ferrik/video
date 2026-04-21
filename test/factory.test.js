@@ -24,6 +24,20 @@ async function cleanupFactoryJobs() {
   );
 }
 
+async function waitForTerminalJob(baseUrl, jobId, options = {}) {
+  const { attempts = 60, delayMs = 200 } = options;
+  const terminalStatuses = ['completed', 'requires_follow_up', 'failed', 'cancelled'];
+  let job = null;
+  for (let i = 0; i < attempts; i += 1) {
+    const resp = await fetch(`${baseUrl}/api/factory/jobs/${jobId}`);
+    assert.strictEqual(resp.status, 200);
+    job = await resp.json();
+    if (terminalStatuses.includes(job?.status)) return job;
+    await new Promise(resolve => setTimeout(resolve, delayMs));
+  }
+  return job;
+}
+
 test.before(async () => {
   await cleanupFactoryJobs();
 });
@@ -312,15 +326,7 @@ test('factory API retry creates a linked retry job and blocked renders become re
     assert.strictEqual(retryJob.retryOf, original.id);
     assert.strictEqual(retryJob.retryDepth, 1);
 
-    let finalJob = null;
-    for (let attempt = 0; attempt < 20; attempt += 1) {
-      const statusResp = await fetch(`${baseUrl}/api/factory/jobs/${retryJob.id}`);
-      assert.strictEqual(statusResp.status, 200);
-      finalJob = await statusResp.json();
-      if (['completed', 'requires_follow_up', 'failed'].includes(finalJob.status)) break;
-      await new Promise(resolve => setTimeout(resolve, 100));
-    }
-
+    const finalJob = await waitForTerminalJob(baseUrl, retryJob.id);
     assert.ok(finalJob);
     assert.strictEqual(finalJob.retryOf, original.id);
     assert.strictEqual(finalJob.retryDepth, 1);
@@ -354,14 +360,7 @@ test('factory package endpoint returns text export for a known job', async () =>
     assert.strictEqual(createResp.status, 202);
     const created = await createResp.json();
 
-    let finalJob = null;
-    for (let attempt = 0; attempt < 20; attempt += 1) {
-      const statusResp = await fetch(`${baseUrl}/api/factory/jobs/${created.id}`);
-      assert.strictEqual(statusResp.status, 200);
-      finalJob = await statusResp.json();
-      if (['completed', 'requires_follow_up', 'failed'].includes(finalJob.status)) break;
-      await new Promise(resolve => setTimeout(resolve, 100));
-    }
+    const finalJob = await waitForTerminalJob(baseUrl, created.id);
 
     const packageResp = await fetch(`${baseUrl}/api/factory/jobs/${created.id}/package.txt`);
     assert.strictEqual(packageResp.status, 200);
